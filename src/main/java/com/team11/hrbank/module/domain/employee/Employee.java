@@ -5,6 +5,8 @@ import com.team11.hrbank.File;
 import com.team11.hrbank.module.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -49,11 +51,11 @@ public class Employee extends BaseEntity {
   private Instant hireDate;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @OnDelete(action = OnDeleteAction.SET_NULL)
   @JoinColumn(name = "profile_image_id")
   private File profileImage;
 
   @ColumnDefault("'ACTIVE'")
-  @Column(name = "status", columnDefinition = "employee_status not null")
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false)
   private EmployeeStatus status;
 }
