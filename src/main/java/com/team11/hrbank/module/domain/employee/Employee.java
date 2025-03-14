@@ -10,8 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import java.time.LocalDate;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -24,17 +23,14 @@ import org.hibernate.annotations.OnDeleteAction;
 @Table(name = "employees")
 public class Employee extends BaseEntity {
 
-  @Size(max = 100)
   @NotNull
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
-  @Size(max = 255)
   @NotNull
   @Column(name = "email", nullable = false)
   private String email;
 
-  @Size(max = 25)
   @NotNull
   @Column(name = "employee_number", nullable = false, length = 25)
   private String employeeNumber;
@@ -44,14 +40,13 @@ public class Employee extends BaseEntity {
   @JoinColumn(name = "department_id")
   private Department department;
 
-  @Size(max = 50)
   @NotNull
   @Column(name = "\"position\"", nullable = false, length = 50)
   private String position;
 
   @NotNull
   @Column(name = "hire_date", nullable = false)
-  private LocalDate hireDate;
+  private Instant hireDate;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @OnDelete(action = OnDeleteAction.SET_NULL)
