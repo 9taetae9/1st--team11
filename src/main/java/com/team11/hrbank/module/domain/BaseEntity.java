@@ -1,4 +1,4 @@
-package com.team11.hrbank.module.domain.base;
+package com.team11.hrbank.module.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
