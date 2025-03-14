@@ -85,3 +85,5 @@ out/
 
 ### Storage ###
 ./storage
+/src/main/resources/application.yaml
+/src/main/resources/schema.sql
