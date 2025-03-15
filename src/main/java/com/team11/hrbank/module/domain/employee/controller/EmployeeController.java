@@ -1,9 +1,11 @@
 package com.team11.hrbank.module.domain.employee.controller;
 
+import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,5 +48,13 @@ public class EmployeeController {
   public ResponseEntity<EmployeeDto> getEmployeeDetails(@PathVariable Long id) {
     return ResponseEntity.ok(employeeQueryService.getEmployeeDetails(id));
   }
+
+  // 직원 수 조회
+  @GetMapping("/{count}")
+  public Long getEmployeeCount(@RequestParam EmployeeStatus status, @RequestParam Instant fromDate,
+      @RequestParam Instant toDate) {
+    return employeeQueryService.getEmployeeCount(status, fromDate, toDate);
+  }
+
 
 }
