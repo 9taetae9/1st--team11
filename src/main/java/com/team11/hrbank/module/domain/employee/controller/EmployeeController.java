@@ -51,8 +51,9 @@ public class EmployeeController {
 
   // 직원 수 조회
   @GetMapping("/{count}")
-  public Long getEmployeeCount(@RequestParam EmployeeStatus status, @RequestParam Instant fromDate,
-      @RequestParam Instant toDate) {
+  public Long getEmployeeCount(@RequestParam(required = false) EmployeeStatus status,
+      @RequestParam(required = false) Instant fromDate,
+      @RequestParam(required = false) Instant toDate) {
     return employeeQueryService.getEmployeeCount(status, fromDate, toDate);
   }
 
