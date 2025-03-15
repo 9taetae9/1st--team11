@@ -1,5 +1,6 @@
 package com.team11.hrbank.module.domain.file.controller;
 
+import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.dto.request.FileUploadRequest;
 import com.team11.hrbank.module.domain.file.dto.response.FileResponse;
 import com.team11.hrbank.module.domain.file.service.FileService;
@@ -9,6 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.FileNotFoundException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/files")
@@ -56,17 +61,22 @@ public class FileController {
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> downloadFile(@PathVariable Long id) {
         try {
+            // 파일 정보 조회 (원래 파일명 포함)
+            File fileEntity = fileService.getFileById(id);
             byte[] fileData = fileService.downloadFile(id);
 
-            // 파일이 정상적으로 다운로드 가능할 때, HTTP 헤더에 파일 이름을 추가하여 반환
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"downloaded_file\"");
-            return new ResponseEntity<>(fileData, headers, HttpStatus.OK);
+            // 원래 파일명을 유지 (한글 깨짐 방지)
+            String encodedFileName = URLEncoder.encode(fileEntity.getFileName(), StandardCharsets.UTF_8);
 
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"");
+
+            return new ResponseEntity<>(fileData, headers, HttpStatus.OK);
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
-            // 예외 처리: 파일을 찾을 수 없는 경우 상태 404로 반환
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new byte[0]); // 파일을 찾을 수 없을 경우 빈 배열 반환
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 }
