@@ -12,5 +12,5 @@ public class FileResponse {
     private String fileName;
     private String format;
     private String filePath;
-//size 제외
+    private Long size;  // size 필드 추가
 }

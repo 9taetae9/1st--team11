@@ -49,11 +49,15 @@ public class FileService {
         Files.createDirectories(path.getParent());
         multipartFile.transferTo(path.toFile());
 
+        // 파일 크기 구하기
+        long fileSize = multipartFile.getSize();
+
         // DB에 저장
         File fileEntity = new File();
         fileEntity.setFileName(originalName);  // 원래 파일명 저장
         fileEntity.setFormat(format);
         fileEntity.setFilePath(filePath);
+        fileEntity.setSize(fileSize);  // 파일 크기 저장
 
         fileRepository.save(fileEntity);
         return fileMapper.toResponse(fileEntity);

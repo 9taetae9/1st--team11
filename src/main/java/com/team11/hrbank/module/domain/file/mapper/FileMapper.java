@@ -13,6 +13,7 @@ public class FileMapper {
                 .fileName(entity.getFileName())
                 .format(entity.getFormat())
                 .filePath(entity.getFilePath())
+                .size(entity.getSize())  // size 필드 추가
                 .build();
     }
 }

@@ -26,7 +26,9 @@ public class File extends BaseEntity {  // BaseEntity 상속받기
     @Column(name = "file_path", nullable = false, length = 255)
     private String filePath;
 
-
+    @NotNull
+    @Column(name = "size", nullable = false)
+    private Long size;  // 파일 크기 추가
 
     // createdAt, updatedAt은 BaseEntity에서 관리
 }

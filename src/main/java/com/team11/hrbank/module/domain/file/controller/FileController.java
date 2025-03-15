@@ -41,6 +41,7 @@ public class FileController {
 
             // 파일 업로드 요청 처리
             FileUploadRequest request = new FileUploadRequest(file);
+            // size 정보도 처리하여 FileResponse 반환
             FileResponse response = fileService.uploadFile(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
