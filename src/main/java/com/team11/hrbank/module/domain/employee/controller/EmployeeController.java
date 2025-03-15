@@ -7,6 +7,7 @@ import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/employees")
 @RequiredArgsConstructor
 public class EmployeeController {
-  
+
   private final EmployeeCommandService employeeCommandService;
   private final EmployeeQueryService employeeQueryService;
 
@@ -30,6 +31,13 @@ public class EmployeeController {
       @RequestPart(value = "profile") MultipartFile file) {
     return ResponseEntity.ok(
         employeeCommandService.updateEmployee(id, employeeUpdateRequest, file));
+  }
+
+  // 직원 삭제
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+    employeeCommandService.deleteEmployee(id);
+    return ResponseEntity.noContent().build();
   }
 
   // 직원 상세 조회

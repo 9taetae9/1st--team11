@@ -1,6 +1,7 @@
 package com.team11.hrbank.module.domain.employee.service;
 
 import com.team11.hrbank.module.domain.employee.Employee;
+import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
@@ -60,6 +61,15 @@ public class EmployeeCommandService {
     }
 
     return employeeMapper.toDto(employee);
+  }
+
+  // 직원 삭제
+  @Transactional
+  public void deleteEmployee(Long id) {
+    Employee employee = employeeRepository.findById(id)
+        .orElseThrow(() -> new NoSuchElementException("employee(" + id + ")는 존재하지 않습니다."));
+    /* 이 부분 TODO (#File) 프로필 이미지(메타데이터, 실제 파일) 삭제 -- 건희씨께 */
+    employee.updateStatus(EmployeeStatus.RESIGNED);
   }
 
 }
