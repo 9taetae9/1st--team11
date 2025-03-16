@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
 }
+
 group = 'com.team11'
 version = '0.0.1-SNAPSHOT'
 java {
@@ -10,11 +11,13 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
 }
+
 repositories {
     mavenCentral()
 }
@@ -30,13 +33,14 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     //test 롬복 사용
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
     //Querydsl 추가
-    implementation 'com.querydsl:querydsl-jpa:5.0.3:jakarta'
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
