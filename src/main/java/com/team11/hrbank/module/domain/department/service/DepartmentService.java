@@ -76,4 +76,17 @@ public class DepartmentService {
     departmentRepository.delete(department);
   }
 
+  public DepartmentDto getDepartmentById(Long id) {
+    if (!departmentRepository.findById(id).isPresent()) {
+      throw new NoSuchElementException("부서를 찾을 수 없습니다: " + id);
+    }
+    Department department = departmentRepository.findById(id).get();
+    DepartmentDto departmentDto = departmentMapper.toDepartmentDto(department);
+    // 나중에 구현: 직원수
+    // departmentDto.setEmployeeCount(employeeRepository.countByDepartmentId(id));
+
+    return departmentDto;
+  }
+
+
 }
