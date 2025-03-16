@@ -57,5 +57,27 @@ public class DepartmentMapper {
     return departmentDto;
   }
 
+  public Department updateDepartmentFromRequest(Department department, @Valid DepartmentUpdateRequest updateRequest) {
+    if(updateRequest == null || department == null){
+      return department;
+    }
 
+    if (updateRequest.getName() != null) {
+      department.setName(updateRequest.getName());
+    }
+
+    if (updateRequest.getDescription() != null) {
+      department.setDescription(updateRequest.getDescription());
+    }
+
+    //LocalDate를 Instant로 변환
+    //UTC 기준 변경
+    if (updateRequest.getEstablishedDate() != null) {
+      Instant establishedDate = updateRequest.getEstablishedDate()
+          .atStartOfDay(ZoneId.of("UTC")).toInstant();
+      department.setEstablishedDate(establishedDate);
+    }
+    return department;
+
+  }
 }
