@@ -63,4 +63,17 @@ public class DepartmentService {
 
   }
 
+  public void deleteDepartment(Long id) {
+    Department department = departmentRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Department not found: " + id));
+
+    // 소속 직원이 있는지 확인
+    // employee리포지토리에 작성되어있는 직원수 카운팅 메서드 확인후 변경 현재는 countByDepartmentId이라고 가정
+//    long employeeCount = employeeRepository./*countByDepartmentId*/(id);
+//    if (employeeCount > 0 ){
+//      throw new IllegalArgumentException("Cannot delete department with associated employees");
+//    }
+
+    departmentRepository.delete(department);
+  }
+
 }
