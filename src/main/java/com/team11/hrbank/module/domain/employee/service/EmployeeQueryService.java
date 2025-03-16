@@ -3,6 +3,7 @@ package com.team11.hrbank.module.domain.employee.service;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDto;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
 import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
@@ -92,6 +93,12 @@ public class EmployeeQueryService {
         getEmployeeCount(status, hireDateFrom, hireDateTo),
         hasNext
     );
+  }
+
+  // 직원 분포 조회
+  public List<EmployeeDistributionDto> getEmployeeDistribution(String groupBy, String status) {
+    return employeeRepositoryCustom.findEmployeeDistribution(groupBy,
+        EmployeeStatus.valueOf(status));
   }
 
   // 직원 수 조회

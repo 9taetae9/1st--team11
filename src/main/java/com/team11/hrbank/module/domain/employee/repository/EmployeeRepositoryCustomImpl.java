@@ -3,12 +3,15 @@ package com.team11.hrbank.module.domain.employee.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.QEmployee;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 
@@ -74,6 +77,45 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
         .where(builder)
         .orderBy(orderSpecifier)
         .limit(size)
+        .fetch();
+  }
+
+  @Override
+  public List<EmployeeDistributionDto> findEmployeeDistribution(String groupBy,
+      EmployeeStatus status) {
+    QEmployee employee = QEmployee.employee;
+
+    // 조건에 따른 필터링
+    BooleanBuilder builder = new BooleanBuilder();
+    if (status != null) {
+      builder.and(employee.status.eq(status));
+    }
+
+    // 전체 직원 수
+    Long totalCount = queryFactory
+        .select(employee.count())
+        .from(employee)
+        .where(builder)
+        .fetchOne();
+
+    if (totalCount == null || totalCount == 0L) {
+      // TODO 총 직원이 0명일 때, 어떤 처리를 할지
+      // 현재는 빈 리스트를 반환하는 것으로 해두었습니다.
+      return Collections.emptyList();
+    }
+
+    // 필터링과 그룹화를 통한 반환
+    // Projections.constructor은 생성자를 통해 DTO로 접근할 수 있습니다.
+    return queryFactory.select(
+            Projections.constructor(EmployeeDistributionDto.class,
+                groupBy.equals("department") ? employee.department : employee.position,
+                employee.count(),
+                employee.count().multiply(100.0).divide(totalCount)
+            )
+        )
+        .from(employee)
+        .where(builder)
+        .groupBy(groupBy.equals("department") ? employee.department : employee.position)
         .fetch();
   }
 

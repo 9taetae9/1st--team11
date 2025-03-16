@@ -2,6 +2,7 @@ package com.team11.hrbank.module.domain.employee.repository;
 
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import java.time.Instant;
 import java.util.List;
 
@@ -22,6 +23,8 @@ public interface EmployeeRepositoryCustom {
       int size,
       String sortField,
       String sortDirection);
+
+  List<EmployeeDistributionDto> findEmployeeDistribution(String groupBy, EmployeeStatus status);
 
   long countByStatusAndHireDateBetween(
       EmployeeStatus status,
