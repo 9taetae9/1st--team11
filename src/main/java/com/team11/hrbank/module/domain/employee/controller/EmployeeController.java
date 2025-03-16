@@ -1,6 +1,7 @@
 package com.team11.hrbank.module.domain.employee.controller;
 
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
+import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
@@ -49,11 +50,50 @@ public class EmployeeController {
     return ResponseEntity.ok(employeeQueryService.getEmployeeDetails(id));
   }
 
+
+  /**
+   * 추신 : 프로토 타입에는 사원 번호(부분 일치), 입사일(범위 조건)를 통한 "필터 작업"이 없습니다. 강사님께서 말한 API 의 불일치인 건 같습니다. 대신 사원 번호와
+   * 입사일은 "정렬 작업"에 필요합니다.
+   **/
+  // 직원 목록 조회
+  @GetMapping
+  public ResponseEntity<CursorPageResponseEmployeeDto> getListEmployees(
+      @RequestParam(required = false) String nameOrEmail,
+      @RequestParam(required = false) String employeeNumber,
+      @RequestParam(required = false) String departmentName,
+      @RequestParam(required = false) String position,
+      @RequestParam(required = false) Instant hireDateFrom,
+      @RequestParam(required = false) Instant hireDateTo,
+      @RequestParam(required = false) EmployeeStatus status,
+      @RequestParam(required = false) Long idAfter,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "name") String sortField,
+      @RequestParam(defaultValue = "asc") String sortDirection
+  ) {
+
+    return ResponseEntity.ok(employeeQueryService.getListEmployees(
+        nameOrEmail,
+        employeeNumber,
+        departmentName,
+        position,
+        hireDateFrom,
+        hireDateTo,
+        status,
+        idAfter,
+        cursor,
+        size,
+        sortField,
+        sortDirection));
+  }
+
+
   // 직원 수 조회
   @GetMapping("/{count}")
   public Long getEmployeeCount(@RequestParam(required = false) EmployeeStatus status,
       @RequestParam(required = false) Instant fromDate,
       @RequestParam(required = false) Instant toDate) {
+    // TODO ResponseEntity
     return employeeQueryService.getEmployeeCount(status, fromDate, toDate);
   }
 
