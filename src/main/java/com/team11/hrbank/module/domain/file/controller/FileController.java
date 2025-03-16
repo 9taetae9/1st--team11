@@ -29,6 +29,8 @@ public class FileController {
      */
     @PostMapping
     public ResponseEntity<FileResponse> uploadFile(@RequestParam("file") MultipartFile file) {
+        System.out.println("oliver486 uploadFile called");
+
         try {
             if (file.isEmpty()) {
                 // 파일이 비었을 경우 예외 처리
@@ -64,6 +66,11 @@ public class FileController {
         try {
             // 파일 정보 조회 (원래 파일명 포함)
             File fileEntity = fileService.getFileById(id);
+            if (fileEntity.getId() != null) {
+                System.out.println("파일 가져오기 성공, ID: " + fileEntity.getId());
+            } else {
+                System.out.println("파일 가져오기 실패");
+            }
             byte[] fileData = fileService.downloadFile(id);
 
             // 원래 파일명을 유지 (한글 깨짐 방지)
@@ -71,11 +78,12 @@ public class FileController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"");
-
             return new ResponseEntity<>(fileData, headers, HttpStatus.OK);
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
