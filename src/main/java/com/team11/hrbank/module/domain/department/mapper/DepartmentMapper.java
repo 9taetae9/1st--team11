@@ -3,6 +3,8 @@ package com.team11.hrbank.module.domain.department.mapper;
 import com.team11.hrbank.module.domain.department.Department;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
+import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
+import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -21,8 +23,10 @@ public class DepartmentMapper {
     department.setDescription(departmentCreateRequest.getDescription());
 
     // 설립일이 제공된 경우 LocalDate를 Instant로 변환하여 설정 -> api 상에서 로컬 데이터 활용하는 것 같음!
+    //UTC 기준 변경
     if(departmentCreateRequest.getEstablishedDate() != null) {
-      Instant establishedDate = departmentCreateRequest.getEstablishedDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
+      Instant establishedDate = departmentCreateRequest.getEstablishedDate()
+          .atStartOfDay(ZoneId.of("UTC")).toInstant();
       department.setEstablishedDate(establishedDate);
     }
     return department;
@@ -40,8 +44,10 @@ public class DepartmentMapper {
     departmentDto.setDescription(department.getDescription());
 
     // 설립일이 존재하는 경우 Instant를 LocalDate로 변환하여 설정 = 위와 같은 이유
+    //UTC 기준 변경
     if(department.getEstablishedDate() != null) {
-      LocalDate establishedDate = LocalDate.ofInstant(department.getEstablishedDate(), ZoneId.systemDefault());
+      LocalDate establishedDate = LocalDate.ofInstant(
+          department.getEstablishedDate(), ZoneId.of("UTC"));
       departmentDto.setEstablishedDate(establishedDate);
     }
 
