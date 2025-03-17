@@ -11,6 +11,7 @@ import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
 import com.team11.hrbank.module.domain.changelog.repository.ChangeLogSpecification;
 import java.net.InetAddress;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
@@ -100,8 +101,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
 
   public long getChangeLogsCount(Instant fromDate, Instant toDate) {
     //시작 일시 (기본값: 7일 전)
-    Instant defaultFrom = Instant.now().minus(7, ChronoUnit.DAYS);
-    Instant from = fromDate != null ? fromDate : defaultFrom;
+    Instant from = fromDate != null ? fromDate : Instant.now().minus(7, ChronoUnit.DAYS);
     Instant to = toDate != null ? toDate : Instant.now();
 
     //기간 유효성 검증
@@ -109,7 +109,15 @@ public class ChangeLogServiceImpl implements ChangeLogService{
       throw new IllegalArgumentException("fromDate must be before toDate");
     }
 
-    return changeLogRepository.countByDateRange(from, to);
+    if (fromDate != null && toDate != null) {
+      return changeLogRepository.countByDateRangeBoth(from, to);
+    } else if (fromDate != null) {
+      return changeLogRepository.countByDateRangeFrom(from);
+    } else if (toDate != null) {
+      return changeLogRepository.countByDateRangeTo(to);
+    } else {
+      return changeLogRepository.countAll();
+    }
   }
 
   private boolean isValidSortField(String field) {

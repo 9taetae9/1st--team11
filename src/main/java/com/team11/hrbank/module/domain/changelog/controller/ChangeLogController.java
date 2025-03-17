@@ -7,6 +7,9 @@ import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -58,10 +61,16 @@ public class ChangeLogController {
 
   @GetMapping("/count") //수정 이력 건수
   public ResponseEntity<Long> getChangeLogsCount(
-      @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant fromDate,
-      @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant toDate) {
+      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate toDate) {
 
-    long changeLogsCount = changeLogService.getChangeLogsCount(fromDate, toDate);
+    Instant fromInstant = fromDate != null ?
+        fromDate.atStartOfDay().toInstant(ZoneOffset.UTC) : null;
+
+    Instant toInstant = toDate != null ?
+        toDate.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC) : null;
+
+    long changeLogsCount = changeLogService.getChangeLogsCount(fromInstant, toInstant);
     return ResponseEntity.ok(changeLogsCount);
   }
 }

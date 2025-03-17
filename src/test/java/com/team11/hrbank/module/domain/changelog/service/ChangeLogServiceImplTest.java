@@ -214,10 +214,40 @@ class ChangeLogServiceImplTest {
     Instant toDate = Instant.now();
     long expectedCount = 10L;
 
-    when(changeLogRepository.countByDateRange(eq(fromDate), eq(toDate))).thenReturn(expectedCount);
+    when(changeLogRepository.countByDateRangeBoth(eq(fromDate), eq(toDate))).thenReturn(expectedCount);
 
     // when
     long result = changeLogService.getChangeLogsCount(fromDate, toDate);
+
+    // then
+    assertEquals(expectedCount, result);
+  }
+
+  @Test
+  void getChangeLogsCount_fromDate만_있는_경우() {
+    // given
+    Instant fromDate = Instant.now().minus(7, ChronoUnit.DAYS);
+    long expectedCount = 5L;
+
+    when(changeLogRepository.countByDateRangeFrom(eq(fromDate))).thenReturn(expectedCount);
+
+    // when
+    long result = changeLogService.getChangeLogsCount(fromDate, null);
+
+    // then
+    assertEquals(expectedCount, result);
+  }
+
+  @Test
+  void getChangeLogsCount_toDate만_있는_경우() {
+    // given
+    Instant toDate = Instant.now();
+    long expectedCount = 15L;
+
+    when(changeLogRepository.countByDateRangeTo(eq(toDate))).thenReturn(expectedCount);
+
+    // when
+    long result = changeLogService.getChangeLogsCount(null, toDate);
 
     // then
     assertEquals(expectedCount, result);
@@ -228,7 +258,7 @@ class ChangeLogServiceImplTest {
     // given
     long expectedCount = 10L;
 
-    when(changeLogRepository.countByDateRange(any(Instant.class), any(Instant.class))).thenReturn(expectedCount);
+    when(changeLogRepository.countAll()).thenReturn(expectedCount);
 
     // when
     long result = changeLogService.getChangeLogsCount(null, null);
