@@ -1,13 +1,21 @@
 package com.team11.hrbank.module.domain.employee.service;
 
+import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
+import com.team11.hrbank.module.domain.EmployeeNumberGenerator;
+import com.team11.hrbank.module.domain.department.repository.DepartmentRepository;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeCreateRequest;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
+import com.team11.hrbank.module.domain.file.File;
+import com.team11.hrbank.module.domain.file.dto.request.FileUploadRequest;
+import com.team11.hrbank.module.domain.file.service.FileService;
 import jakarta.transaction.Transactional;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +25,70 @@ import org.springframework.web.multipart.MultipartFile;
 public class EmployeeCommandService {
 
   private final EmployeeRepository employeeRepository;
+  private final FileService fileService;
+  //
+  private final DepartmentRepository departmentRepository;
+
+  //
   private final EmployeeMapper employeeMapper;
+  //
+  private final EmployeeNumberGenerator employeeNumberGenerator;
+
+  // 직원 생성
+  @Transactional
+  public EmployeeDto createEmployee(EmployeeCreateRequest employeeCreateRequest,
+      MultipartFile file) throws Exception {
+
+    /* TODO (#Change-log) memo 데이터를 Change-log 로 전달 -- 태현씨께 */
+
+    /** 요구 조건 : 이메일 중복 여부 검증 -> 레포지토리 단에서 email 컬럼만 들고올 수 있는 메서드 작성 **/
+    if (
+        employeeRepository.findAllEmails().stream()
+            .anyMatch(email -> email.equals(employeeCreateRequest.email()))
+    ) {
+      throw new IllegalArgumentException("email(" + employeeCreateRequest.email() + ")은 이미 존재합니다.");
+    }
+
+    // 프로필 이미지 처리 TODO : File 경로 문제 있습니다. > 지정된 경로를 찾을 수 없습니다 -- 건희씨께
+    File profileImage = Optional.ofNullable(file)
+        .map(FileUploadRequest::new)
+        .map(fileUploadRequest -> {
+          try {
+            return fileService.uploadFile(fileUploadRequest);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        })
+        .map(uploadedFile -> fileService.getFileById(uploadedFile.getId()))
+        .orElse(null);
+//    FileUploadRequest fileUploadRequest = new FileUploadRequest(file);
+//    File profileImage = null;
+//    if (file != null) {
+//      Long fileId = fileService.uploadFile(fileUploadRequest).getId();
+//      profileImage = fileService.getFileById(fileId);
+//    }
+
+    // 직원 생성
+    Employee employee = Employee.builder()
+        .name(employeeCreateRequest.name())
+        .email(employeeCreateRequest.email())
+        .employeeNumber(employeeNumberGenerator.generateEmployeeNumber())
+        // TODO : 임시로 departmentRepository 지정해뒀습니다. -- 지현씨께
+        .department(departmentRepository.findById(
+            employeeCreateRequest.departmentId()).orElseThrow(
+            () -> new ResourceNotFoundException("부서(" + employeeCreateRequest.departmentId()
+                + ")가 존재하지 않습니다.")))
+        .position(employeeCreateRequest.position())
+        .hireDate(employeeCreateRequest.hireDate())
+        .profileImage(profileImage)
+        .status(EmployeeStatus.ACTIVE) // 재직중 초기화 조건, 엔티티에 설정된 에노테이션은 DB 레벨에 지정된 것
+        .build();
+
+    // 직원 저장
+    employeeRepository.save(employee);
+
+    return employeeMapper.toDto(employee);
+  }
 
   // 직원 수정
   @Transactional
