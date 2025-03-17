@@ -8,6 +8,7 @@ import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 import com.team11.hrbank.module.domain.changelog.mapper.ChangeLogMapper;
 import com.team11.hrbank.module.domain.changelog.mapper.DiffMapper;
 import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
+import com.team11.hrbank.module.domain.changelog.repository.ChangeLogSpecification;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,9 +56,11 @@ public class ChangeLogServiceImpl implements ChangeLogService{
     //페이징 및 정렬 설정
     PageRequest pageRequest = PageRequest.of(0, size, Sort.by(direction, dbField));
 
-    //변경 로그 조회
-    Page<ChangeLog> page = changeLogRepository.findAllWithFilters(
-        employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter, pageRequest);
+    // Specification을 사용
+    Specification<ChangeLog> spec = ChangeLogSpecification.withFilters(
+        employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter);
+
+    Page<ChangeLog> page = changeLogRepository.findAll(spec, pageRequest);
 
     // 응답 생성
     List<ChangeLog> content = page.getContent();
