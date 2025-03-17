@@ -1,5 +1,6 @@
 package com.team11.hrbank.module.domain.employee.service;
 
+import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDto;
@@ -52,11 +53,6 @@ public class EmployeeQueryService {
       String sortDirection
   ) {
 
-    System.out.println("Cursor condition: idAfter=" + idAfter +
-        ", cursor=" + cursor +
-        ", sortField=" + sortField +
-        ", sortDirection=" + sortDirection);
-
     List<Employee> employees = employeeRepositoryCustom.findEmployeesByConditions(
         nameOrEmail,
         employeeNumber,
@@ -70,6 +66,10 @@ public class EmployeeQueryService {
         size + 1,
         sortField,
         sortDirection);
+
+    if (employees.isEmpty()) {
+      throw new ResourceNotFoundException("해당 조건에 맞는 직원이 존재하지 않습니다.");
+    }
 
     String nextCursor = null;
     Long nextIdAfter;

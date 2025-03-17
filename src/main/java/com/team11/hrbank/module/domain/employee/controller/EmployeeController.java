@@ -82,8 +82,8 @@ public class EmployeeController {
       @RequestParam(required = false) String employeeNumber,
       @RequestParam(required = false) String departmentName,
       @RequestParam(required = false) String position,
-      @RequestParam(required = false) Instant hireDateFrom,
-      @RequestParam(required = false) Instant hireDateTo,
+      @RequestParam(required = false) LocalDate hireDateFrom,
+      @RequestParam(required = false) LocalDate hireDateTo,
       @RequestParam(required = false) EmployeeStatus status,
       @RequestParam(required = false) Long idAfter,
       @RequestParam(required = false) String cursor,
@@ -92,13 +92,23 @@ public class EmployeeController {
       @RequestParam(defaultValue = "asc") String sortDirection
   ) {
 
+    // LocalDate -> Instant
+
+    Instant hireDateFromInstant = (hireDateFrom != null)
+        ? hireDateFrom.atStartOfDay(ZoneId.of("UTC")).toInstant()
+        : null;
+
+    Instant hireDateToInstant = (hireDateTo != null)
+        ? hireDateTo.atStartOfDay(ZoneId.of("UTC")).toInstant()
+        : null;
+
     return ResponseEntity.ok(employeeQueryService.getListEmployees(
         nameOrEmail,
         employeeNumber,
         departmentName,
         position,
-        hireDateFrom,
-        hireDateTo,
+        hireDateFromInstant,
+        hireDateToInstant,
         status,
         idAfter,
         cursor,
@@ -125,9 +135,18 @@ public class EmployeeController {
       @RequestParam(required = false) LocalDate fromDate,
       @RequestParam(required = false) LocalDate toDate) {
 
-    return ResponseEntity.ok(employeeQueryService.getEmployeeCount(status,
-        fromDate.atStartOfDay(ZoneId.of("UTC")).toInstant(),
-        toDate.atStartOfDay(ZoneId.of("UTC")).toInstant()));
+    // LocalDate -> Instant
+
+    Instant fromDateInstant = (fromDate != null)
+        ? fromDate.atStartOfDay(ZoneId.of("UTC")).toInstant()
+        : null;
+
+    Instant toDateInstant = (toDate != null)
+        ? toDate.atStartOfDay(ZoneId.of("UTC")).toInstant()
+        : null;
+
+    return ResponseEntity.ok(
+        employeeQueryService.getEmployeeCount(status, fromDateInstant, toDateInstant));
   }
 
 
