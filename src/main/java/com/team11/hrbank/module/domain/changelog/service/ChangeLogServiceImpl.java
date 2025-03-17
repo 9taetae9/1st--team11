@@ -1,5 +1,6 @@
 package com.team11.hrbank.module.domain.changelog.service;
 
+import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
 import com.team11.hrbank.module.domain.changelog.HistoryType;
 import com.team11.hrbank.module.domain.changelog.dto.CursorPageResponseChangeLogDto;
@@ -82,8 +83,9 @@ public class ChangeLogServiceImpl implements ChangeLogService{
   }
 
   public List<DiffDto> getChangeLogDiffs(Long id) {
+
     ChangeLog changeLog = changeLogRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("ChangeLog not found with id : " + id));
+        .orElseThrow(() -> ResourceNotFoundException.of("ChangeLog", "id", id));
 
     if (changeLog.getChangeLogDiff() == null) {
       return List.of();
