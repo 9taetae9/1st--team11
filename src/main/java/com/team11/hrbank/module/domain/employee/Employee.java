@@ -1,6 +1,6 @@
 package com.team11.hrbank.module.domain.employee;
 
-import com.team11.hrbank.module.domain.BaseEntity;
+import com.team11.hrbank.module.domain.UpdatableEntity;
 import com.team11.hrbank.module.domain.department.Department;
 import com.team11.hrbank.module.domain.file.File;
 import jakarta.persistence.Column;
@@ -22,7 +22,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Entity
 @Table(name = "employees")
-public class Employee extends BaseEntity {
+public class Employee extends UpdatableEntity {
 
   @NotNull
   @Column(name = "name", nullable = false, length = 100)
