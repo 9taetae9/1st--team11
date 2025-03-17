@@ -8,6 +8,8 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -51,7 +53,7 @@ public class EmployeeController {
   @PatchMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable Long id,
       @RequestPart(value = "employee") EmployeeUpdateRequest employeeUpdateRequest,
-      @RequestPart(value = "profile") MultipartFile file) {
+      @RequestPart(value = "profile", required = false) MultipartFile file) {
     return ResponseEntity.ok(
         employeeCommandService.updateEmployee(id, employeeUpdateRequest, file));
   }
