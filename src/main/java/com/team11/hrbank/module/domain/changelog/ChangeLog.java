@@ -1,7 +1,7 @@
 package com.team11.hrbank.module.domain.changelog;
 
-import com.team11.hrbank.Employee;
 import com.team11.hrbank.module.domain.BaseEntity;
+import com.team11.hrbank.module.domain.employee.Employee;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,23 +24,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChangeLog extends BaseEntity {
 
-  @NotNull
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "employee_id", nullable = false)
   private Employee employee;
 
-  @NotNull
   @Column(name = "employee_number", nullable = false, length = 25)
   private String employeeNumber;
 
   @Column(name = "memo", columnDefinition = "TEXT")
   private String memo;
 
-  @NotNull
   @Column(name = "ip_address", nullable = false)
   private InetAddress ipAddress;
 
-  @NotNull
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)
   private HistoryType type;
