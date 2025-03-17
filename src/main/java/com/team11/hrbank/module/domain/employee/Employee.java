@@ -1,7 +1,8 @@
 package com.team11.hrbank.module.domain.employee;
 
-import com.team11.hrbank.Department;
 import com.team11.hrbank.module.domain.BaseEntity;
+import com.team11.hrbank.module.domain.department.Department;
+import com.team11.hrbank.module.domain.file.File;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
