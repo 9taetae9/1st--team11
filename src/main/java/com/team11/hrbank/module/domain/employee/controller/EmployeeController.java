@@ -119,13 +119,13 @@ public class EmployeeController {
   // TODO : 직원 수 추이
 
   // 직원 수 조회
-  @GetMapping("/{count}")
-  // TODO EmployeeStatus -> String 으로 수정
-  public Long getEmployeeCount(@RequestParam(required = false) EmployeeStatus status,
+  @GetMapping("/count")
+  public ResponseEntity<Long> getEmployeeCount(
+      @RequestParam(required = false) EmployeeStatus status,
       @RequestParam(required = false) Instant fromDate,
       @RequestParam(required = false) Instant toDate) {
-    // TODO ResponseEntity
-    return employeeQueryService.getEmployeeCount(status, fromDate, toDate);
+
+    return ResponseEntity.ok(employeeQueryService.getEmployeeCount(status, fromDate, toDate);
   }
 
 
