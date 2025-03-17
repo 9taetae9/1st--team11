@@ -1,0 +1,120 @@
+package com.team11.hrbank.module.domain.changelog.service;
+
+import com.team11.hrbank.module.domain.changelog.ChangeLog;
+import com.team11.hrbank.module.domain.changelog.HistoryType;
+import com.team11.hrbank.module.domain.changelog.dto.CursorPageResponseChangeLogDto;
+import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
+import com.team11.hrbank.module.domain.changelog.mapper.ChangeLogMapper;
+import com.team11.hrbank.module.domain.changelog.mapper.DiffMapper;
+import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
+import java.net.InetAddress;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ChangeLogServiceImpl implements ChangeLogService{
+
+  private final ChangeLogRepository changeLogRepository;
+  private final ChangeLogMapper changeLogMapper;
+  private final DiffMapper diffMapper;
+
+
+  public CursorPageResponseChangeLogDto getAllChangeLogs(String employeeNumber, HistoryType type, String memo, InetAddress ipAddress, Instant atFrom, Instant atTo, Long idAfter,
+      String cursor, int size, String sortField, String sortDirection) {
+
+    //커서 디코딩
+    if (cursor != null && !cursor.isEmpty() && idAfter == null) {
+      String decoded = new String(Base64.getDecoder().decode(cursor));
+      idAfter = Long.parseLong(decoded.replace("{\"id\":", "").replace("}", ""));
+    }
+
+    //정렬 필드 유효성 검사
+    if (!isValidSortField(sortField)) {
+      throw new IllegalArgumentException("Invalid sort field: " + sortField);
+    }
+
+    String dbField = convertToDbField(sortField);
+
+    //정렬 방향 설정
+    Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection)
+        ? Direction.DESC : Direction.ASC;
+
+    //페이징 및 정렬 설정
+    PageRequest pageRequest = PageRequest.of(0, size, Sort.by(direction, dbField));
+
+    //변경 로그 조회
+    Page<ChangeLog> page = changeLogRepository.findAllWithFilters(
+        employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter, pageRequest);
+
+    // 응답 생성
+    List<ChangeLog> content = page.getContent();
+    boolean hasNext = page.hasNext();
+    long totalElements = page.getTotalElements();
+
+    // 다음 커서 생성
+    String nextCursor = null;
+    Long nextIdAfter = null;
+    if (!content.isEmpty() && hasNext) {
+      ChangeLog lastItem = content.get(content.size() - 1);
+      nextIdAfter = lastItem.getId();
+      nextCursor = Base64.getEncoder().encodeToString(("{\"id\":" + nextIdAfter + "}").getBytes());
+    }
+
+    return new CursorPageResponseChangeLogDto(
+        changeLogMapper.toDtoList(content),
+        nextCursor,
+        nextIdAfter,
+        size,
+        totalElements,
+        hasNext
+    );
+  }
+
+  public List<DiffDto> getChangeLogDiffs(Long id) {
+    ChangeLog changeLog = changeLogRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("ChangeLog not found with id : " + id));
+
+    if (changeLog.getChangeLogDiff() == null) {
+      return List.of();
+    }
+
+    return diffMapper.toDtoList(changeLog.getChangeLogDiff().getChanges());
+  }
+
+  public long getChangeLogsCount(Instant fromDate, Instant toDate) {
+    //시작 일시 (기본값: 7일 전)
+    Instant defaultFrom = Instant.now().minus(7, ChronoUnit.DAYS);
+    Instant from = fromDate != null ? fromDate : defaultFrom;
+    Instant to = toDate != null ? toDate : Instant.now();
+
+    //기간 유효성 검증
+    if (from.isAfter(to)) {
+      throw new IllegalArgumentException("fromDate must be before toDate");
+    }
+
+    return changeLogRepository.countByDateRange(from, to);
+  }
+
+  private boolean isValidSortField(String field) {
+    return field != null && (field.equals("ipAddress") || field.equals("at"));
+  }
+
+  private String convertToDbField(String sortField) {
+    if ("at".equals(sortField)) {
+      return "createdAt";
+    }
+
+    return sortField;
+  }
+}
