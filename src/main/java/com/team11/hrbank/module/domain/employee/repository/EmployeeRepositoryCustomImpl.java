@@ -108,9 +108,9 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     // Projections.constructor은 생성자를 통해 DTO로 접근할 수 있습니다.
     return queryFactory.select(
             Projections.constructor(EmployeeDistributionDto.class,
-                groupBy.equals("department") ? employee.department : employee.position,
+                groupBy.equals("department") ? employee.department.name : employee.position,
                 employee.count(),
-                employee.count().multiply(100.0).divide(totalCount)
+                employee.count().multiply(100.0).divide(totalCount).doubleValue()
             )
         )
         .from(employee)
