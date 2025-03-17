@@ -1,7 +1,6 @@
 package com.team11.hrbank.module.domain.employee;
 
 import com.team11.hrbank.Department;
-import com.team11.hrbank.File;
 import com.team11.hrbank.module.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,7 +18,6 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-@Builder
 @Getter
 @Entity
 @Table(name = "employees")
@@ -61,6 +59,19 @@ public class Employee extends BaseEntity {
 
   public Employee() {
 
+  }
+
+  @Builder
+  public Employee(String name, String email, String employeeNumber, Department department,
+      String position, Instant hireDate, File profileImage, EmployeeStatus status) {
+    this.name = name;
+    this.email = email;
+    this.employeeNumber = employeeNumber;
+    this.department = department;
+    this.position = position;
+    this.hireDate = hireDate;
+    this.profileImage = profileImage;
+    this.status = status;
   }
 
   // update 메서드 추가
