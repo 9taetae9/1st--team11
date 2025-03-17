@@ -18,9 +18,16 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmployeeQueryService {
 
+
   private final EmployeeRepository employeeRepository;
   private final EmployeeRepositoryCustom employeeRepositoryCustom;
   private final EmployeeMapper employeeMapper;
+
+  // 부서 별 직원 수
+  public Long countByDepartmentId(Long departmentId) {
+    return employeeRepository.countByDepartmentId(departmentId);
+  }
+
 
   // 직원 상세 조회
   public EmployeeDto getEmployeeDetails(Long id) {
@@ -44,6 +51,12 @@ public class EmployeeQueryService {
       String sortField,
       String sortDirection
   ) {
+
+    System.out.println("Cursor condition: idAfter=" + idAfter +
+        ", cursor=" + cursor +
+        ", sortField=" + sortField +
+        ", sortDirection=" + sortDirection);
+
     List<Employee> employees = employeeRepositoryCustom.findEmployeesByConditions(
         nameOrEmail,
         employeeNumber,
@@ -54,7 +67,7 @@ public class EmployeeQueryService {
         status,
         idAfter,
         cursor,
-        size + 1, // todo 이거 좀 더 파악
+        size + 1,
         sortField,
         sortDirection);
 
@@ -62,13 +75,22 @@ public class EmployeeQueryService {
     Long nextIdAfter;
     boolean hasNext = false;
 
+    // hasNext 간단 구현 :
+    // 별도의 쿼리 메서드 사용없이 size+1 를 전달하여 구현한다.
+    // employees.size() > size = 한 페이지의 사이즈가 전달된 사이즈보다 클 경우, next가 있다고 판단한다.
     if (employees.size() > size) {
-      // size + 1로 조회했기 때문에, 마지막 직원은 실제 목록에 포함되지 않음
+      // size + 1로 조회했기 때문에, 마지막 직원은 실제 목록에 포함되지 않는다.
       employees.remove(employees.size() - 1);  // 마지막 직원 제거
       hasNext = true;
     }
 
     Employee lastEmployee = employees.get(employees.size() - 1);
+
+    // cursor 값이 없으면 sortField 값에 맞춰 기본값을 설정
+    if (cursor == null || cursor.isEmpty()) {
+      // 기본적으로 sortField가 "name"으로 설정되어 있으므로 name을 기준으로 페이지네이션 처리
+      cursor = sortField;
+    }
 
     switch (cursor) {
       case "name":

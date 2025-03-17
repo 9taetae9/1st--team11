@@ -11,4 +11,5 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
   @Query("SELECT e.email FROM Employee e")
   List<String> findAllEmails();
 
+  long countByDepartmentId(Long departmentId);
 }
