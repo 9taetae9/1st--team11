@@ -1,9 +1,9 @@
 package com.team11.hrbank.module.domain.employee.dto;
 
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
-import java.time.Instant;
+import java.time.LocalDate;
 
-public record EmployeeDto (
+public record EmployeeDto(
     Long id,
     String name,
     String email,
@@ -11,8 +11,9 @@ public record EmployeeDto (
     Long departmentId,
     String departmentName,
     String position,
-    Instant hireDate,
+    LocalDate hireDate,
     EmployeeStatus status,
     Long profileImageId
-){
+) {
+
 }

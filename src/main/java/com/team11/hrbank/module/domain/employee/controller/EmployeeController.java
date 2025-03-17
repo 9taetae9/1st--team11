@@ -122,10 +122,12 @@ public class EmployeeController {
   @GetMapping("/count")
   public ResponseEntity<Long> getEmployeeCount(
       @RequestParam(required = false) EmployeeStatus status,
-      @RequestParam(required = false) Instant fromDate,
-      @RequestParam(required = false) Instant toDate) {
+      @RequestParam(required = false) LocalDate fromDate,
+      @RequestParam(required = false) LocalDate toDate) {
 
-    return ResponseEntity.ok(employeeQueryService.getEmployeeCount(status, fromDate, toDate);
+    return ResponseEntity.ok(employeeQueryService.getEmployeeCount(status,
+        fromDate.atStartOfDay(ZoneId.of("UTC")).toInstant(),
+        toDate.atStartOfDay(ZoneId.of("UTC")).toInstant()));
   }
 
 
