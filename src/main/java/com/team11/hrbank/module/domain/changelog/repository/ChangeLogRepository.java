@@ -13,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long> {
 
   @Query("select cl from ChangeLog as cl where "+
-  "(:employNumber is null or cl.employeeNumber = :employeeNumber) and"
+  "(:employeeNumber is null or cl.employeeNumber = :employeeNumber) and"
       + "(:type is null or cl.type = :type) and"
       + "(:memo is null or cl.memo like %:memo% ) and"
       + "(:ipAddress is null or cl.ipAddress = :ipAddress) and"
