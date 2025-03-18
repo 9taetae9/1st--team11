@@ -25,9 +25,8 @@ public class Department extends UpdatableEntity {
   @Column(name = "description", length = Integer.MAX_VALUE)
   private String description;
 
-  @Column(name = "established_date", nullable = false)
+  @Column(name = "established_date", nullable = false, columnDefinition = "DATE")
   private Instant establishedDate;
-
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;

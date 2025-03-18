@@ -62,7 +62,7 @@ public class DepartmentController {
       @RequestParam(required = false) Long idAfter,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false, defaultValue = "10") Integer size,
-      @RequestParam(required = false, defaultValue = "name") String sortField,
+      @RequestParam(required = false, defaultValue = "establishedDate") String sortField,
       @RequestParam(required = false, defaultValue = "asc") String sortDirection) {
 
     CursorPageResponseDepartmentDto result = departmentService.getAllDepartments(

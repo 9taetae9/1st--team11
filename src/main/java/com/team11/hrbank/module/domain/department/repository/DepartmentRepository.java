@@ -46,5 +46,4 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   Page<Department> searchWithCursorDesc(
       @Param("id") Long id, @Param("search") String search, Pageable pageable);
 
-
 }

@@ -144,11 +144,10 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     if (sortField == null || sortField.isEmpty()) {
-      sortField = "name"; // 기본 정렬 필드 부서명
+      sortField = "establishedDate"; // API 명세에 맞게 기본 정렬 필드를 establishedDate로 수정
     }
 
     boolean isAscending = sortDirection == null || "asc".equalsIgnoreCase(sortDirection);
-    //컨트롤러와 일치하도록 기본적으로 asc 오름차순으로 정렬
 
     Pageable pageable = PageRequest.of(0, size,
         isAscending ? Sort.Direction.ASC : Sort.Direction.DESC,
