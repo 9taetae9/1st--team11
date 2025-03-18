@@ -1,10 +1,12 @@
 package com.team11.hrbank.module.domain.backup.repository;
 
 import com.team11.hrbank.module.domain.backup.BackupHistory;
+import com.team11.hrbank.module.domain.backup.BackupStatus;
+import java.time.Instant;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import java.time.LocalDateTime;
 
 /**
  * 백업 이력을 조회하는 Repository 인터페이스.
@@ -20,7 +22,7 @@ public interface BackupHistoryRepository extends JpaRepository<BackupHistory, Lo
      * @return 가장 최근 완료된 백업의 시작 시간(LocalDateTime)
      */
     @Query("SELECT MAX(b.startAt) FROM BackupHistory b WHERE b.status = 'COMPLETED'")
-    LocalDateTime findLatestCompletedBackupTime();
+    Instant findLatestCompletedBackupTime();
 
     /**
      * 현재 진행 중인 백업의 개수를 조회하는 메서드.
@@ -28,4 +30,9 @@ public interface BackupHistoryRepository extends JpaRepository<BackupHistory, Lo
      */
     @Query("SELECT COUNT(b) FROM BackupHistory b WHERE b.status = 'IN_PROGRESS'")
     Long countInProgressBackups();
+
+    /**
+     * 조건에 맞는 상태의 최신 백업 조회
+     */
+    Optional<BackupHistory> findTopByStatusOrderByStartAtDesc(BackupStatus status);
 }
