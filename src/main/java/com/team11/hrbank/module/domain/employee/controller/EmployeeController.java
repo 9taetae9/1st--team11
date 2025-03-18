@@ -9,6 +9,7 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -64,7 +65,7 @@ public class EmployeeController {
   @PatchMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable Long id,
       @RequestPart(value = "employee") EmployeeUpdateRequest employeeUpdateRequest,
-      @RequestPart(value = "profile", required = false) MultipartFile file) {
+      @RequestPart(value = "profile", required = false) MultipartFile file) throws IOException {
     return ResponseEntity.ok(
         employeeCommandService.updateEmployee(id, employeeUpdateRequest, file));
   }
