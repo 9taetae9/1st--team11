@@ -1,8 +1,8 @@
 package com.team11.hrbank.module.domain.employee;
 
-import com.team11.hrbank.Department;
-import com.team11.hrbank.File;
-import com.team11.hrbank.module.domain.BaseEntity;
+import com.team11.hrbank.module.domain.UpdatableEntity;
+import com.team11.hrbank.module.domain.department.Department;
+import com.team11.hrbank.module.domain.file.File;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,17 +13,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
-@Setter
 @Entity
 @Table(name = "employees")
-public class Employee extends BaseEntity {
+public class Employee extends UpdatableEntity {
 
   @NotNull
   @Column(name = "name", nullable = false, length = 100)
@@ -58,4 +57,50 @@ public class Employee extends BaseEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false)
   private EmployeeStatus status;
+
+  public Employee() {
+
+  }
+
+  @Builder
+  public Employee(String name, String email, String employeeNumber, Department department,
+      String position, Instant hireDate, File profileImage, EmployeeStatus status) {
+    this.name = name;
+    this.email = email;
+    this.employeeNumber = employeeNumber;
+    this.department = department;
+    this.position = position;
+    this.hireDate = hireDate;
+    this.profileImage = profileImage;
+    this.status = status;
+  }
+
+  // update 메서드 추가
+  public void updateName(String name) {
+    this.name = name;
+  }
+
+  public void updateEmail(String email) {
+    this.email = email;
+  }
+
+  public void updateDepartment(Department department) {
+    this.department = department;
+  }
+
+  public void updatePosition(String position) {
+    this.position = position;
+  }
+
+  public void updateHireDate(Instant hireDate) {
+    this.hireDate = hireDate;
+  }
+
+  public void updateProfileImage(File profileImage) {
+    this.profileImage = profileImage;
+  }
+
+  public void updateStatus(EmployeeStatus status) {
+    this.status = status;
+  }
 }
