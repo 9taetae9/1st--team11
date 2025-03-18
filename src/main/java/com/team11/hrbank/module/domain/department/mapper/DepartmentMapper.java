@@ -8,7 +8,9 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import org.springframework.stereotype.Component;
+
 
 @Component
 public class DepartmentMapper {
@@ -26,7 +28,7 @@ public class DepartmentMapper {
     //UTC 기준 변경
     if(departmentCreateRequest.getEstablishedDate() != null) {
       Instant establishedDate = departmentCreateRequest.getEstablishedDate()
-          .atStartOfDay(ZoneId.of("UTC")).toInstant();
+          .atStartOfDay(ZoneOffset.UTC).toInstant();
       department.setEstablishedDate(establishedDate);
     }
     return department;
@@ -47,7 +49,7 @@ public class DepartmentMapper {
     //UTC 기준 변경
     if(department.getEstablishedDate() != null) {
       LocalDate establishedDate = LocalDate.ofInstant(
-          department.getEstablishedDate(), ZoneId.of("UTC"));
+          department.getEstablishedDate(), ZoneOffset.UTC);
       departmentDto.setEstablishedDate(establishedDate);
     }
 
@@ -74,7 +76,7 @@ public class DepartmentMapper {
     //UTC 기준 변경
     if (updateRequest.getEstablishedDate() != null) {
       Instant establishedDate = updateRequest.getEstablishedDate()
-          .atStartOfDay(ZoneId.of("UTC")).toInstant();
+          .atStartOfDay(ZoneOffset.UTC).toInstant();
       department.setEstablishedDate(establishedDate);
     }
     return department;
