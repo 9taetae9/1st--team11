@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class BackupScheduler {
     private final BackupService backupService;
 
-    @Scheduled(cron = "0 0 * * * *") // 매 시간 정각 실행
+    @Scheduled(cron = "${backup.schedule.cron:0 0 * * * *}") // 매 시간 정각 실행
     public void scheduledBackup() {
         backupService.performBackup("system");
     }
