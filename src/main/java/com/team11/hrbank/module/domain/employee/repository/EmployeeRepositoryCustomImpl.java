@@ -141,7 +141,6 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
 
   private OrderSpecifier<?> createOrderSpecifier(String sortField, String sortDirection,
       QEmployee employee) {
-    //
     Order direction = "asc".equalsIgnoreCase(sortDirection) ? Order.ASC : Order.DESC;
 
     switch (sortField) {

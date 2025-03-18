@@ -5,6 +5,7 @@ import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDt
 import com.team11.hrbank.module.domain.employee.dto.EmployeeCreateRequest;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
@@ -136,7 +137,24 @@ public class EmployeeController {
 
   }
 
-  // TODO : 직원 수 추이
+  // TODO 직원 수 추이 (미완)
+  @GetMapping("/stats/trend")
+  public ResponseEntity<List<EmployeeTrendDto>> getEmployeeTrend(
+      @RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to,
+      @RequestParam(required = false, defaultValue = "month") String unit) {
+
+    // LocalDate -> Instant
+
+    Instant fromInstant = (from != null)
+        ? from.atStartOfDay(ZoneId.of("UTC")).toInstant()
+        : null;
+
+    Instant toInstant = (to != null)
+        ? to.atStartOfDay(ZoneId.of("UTC")).toInstant()
+        : null;
+
+    return ResponseEntity.ok(employeeQueryService.getEmployeeTrend(fromInstant, toInstant, unit));
+  }
 
   // 직원 수 조회
   @GetMapping("/count")

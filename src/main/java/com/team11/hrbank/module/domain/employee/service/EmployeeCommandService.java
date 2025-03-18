@@ -12,6 +12,7 @@ import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.dto.request.FileUploadRequest;
+import com.team11.hrbank.module.domain.file.repository.FileRepository;
 import com.team11.hrbank.module.domain.file.service.FileService;
 import jakarta.transaction.Transactional;
 import java.util.NoSuchElementException;
@@ -33,6 +34,7 @@ public class EmployeeCommandService {
   private final EmployeeMapper employeeMapper;
   //
   private final EmployeeNumberGenerator employeeNumberGenerator;
+  private final FileRepository fileRepository;
 
   // 직원 생성
   @Transactional
@@ -113,7 +115,11 @@ public class EmployeeCommandService {
       employee.updateEmail(employeeUpdateRequest.email());
     }
     if (employeeUpdateRequest.departmentId() != null) {
-      /* 이 부분 TODO (#Department) 부서 id를 통해 부서 객체 전달받기 -- 지현씨께 */
+      // TODO : 임시로 departmentRepository 지정해뒀습니다. -- 지현씨께
+      employee.updateDepartment(departmentRepository
+          .findById(employeeUpdateRequest.departmentId())
+          .orElseThrow(() -> ResourceNotFoundException.of("Department", "id",
+              employeeUpdateRequest.departmentId())));
     }
     if (employeeUpdateRequest.position() != null) {
       employee.updatePosition(employeeUpdateRequest.position());
@@ -128,7 +134,18 @@ public class EmployeeCommandService {
       /* 이 부분 TODO (#Change-log) memo 데이터를 Change-log 로 전달 -- 태현씨께 */
     }
     if (file != null) {
-      /* 이 부분 TODO (#File) 프로필 이미지 처리 -- byte 데이터 처리 및 메타데이터를 넘겨주는 자리 -- 건희씨께 */
+      /* 이 부분 TODO : File 경로 문제 있습니다. > 지정된 경로를 찾을 수 없습니다 -- 건희씨께 */
+      File profileImage = Optional.ofNullable(file)
+          .map(FileUploadRequest::new)
+          .map(fileUploadRequest -> {
+            try {
+              return fileService.uploadFile(fileUploadRequest);
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          })
+          .map(uploadedFile -> fileService.getFileById(uploadedFile.getId()))
+          .orElse(null);
     }
 
     return employeeMapper.toDto(employee);
@@ -140,7 +157,9 @@ public class EmployeeCommandService {
     Employee employee = employeeRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("employee(" + id + ")는 존재하지 않습니다."));
     /* 이 부분 TODO (#File) 프로필 이미지(메타데이터, 실제 파일) 삭제 -- 건희씨께 */
+    // TODO : 메타데이터 삭제를 어떤 방식으로 진행하면 될지 -> 토의 필요
+    // TODO : 우선 실제 파일은 레포지토리로 직접 접근 -> 토의가 필요
+    fileRepository.delete(employee.getProfileImage());
     employee.updateStatus(EmployeeStatus.RESIGNED);
   }
-
 }
