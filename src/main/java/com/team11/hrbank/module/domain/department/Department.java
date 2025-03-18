@@ -1,5 +1,6 @@
 package com.team11.hrbank.module.domain.department;
 
+import com.team11.hrbank.module.domain.UpdatableEntity;
 import java.time.Instant;
 
 import jakarta.persistence.Column;
@@ -15,7 +16,7 @@ import com.team11.hrbank.module.domain.BaseEntity;
 @Setter
 @Entity
 @Table(name = "departments")
-public class Department extends BaseEntity {
+public class Department extends UpdatableEntity {
 
   @NotNull
   @Column(name = "name", nullable = false, length = 100)
@@ -30,9 +31,5 @@ public class Department extends BaseEntity {
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
-  }
-
-  public void setUpdatedAt(Instant updatedAt) {
-    this.updatedAt = updatedAt;
   }
 }
