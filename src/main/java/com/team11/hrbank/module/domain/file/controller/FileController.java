@@ -2,6 +2,7 @@ package com.team11.hrbank.module.domain.file.controller;
 
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.service.FileService;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
@@ -28,12 +29,12 @@ public class FileController {
      * Content-Type을 명확히 지정하여 OpenAPI 명세와 일치하도록 수정.
      */
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") long id) throws Exception { // long으로 변경
+    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") long id) throws IOException {
         File fileEntity = fileService.getFileById(id);
         log.info("파일 다운로드 요청: {}", fileEntity.getFileName());
 
         byte[] fileData = fileService.downloadFile(id);
-        String encodedFileName = URLEncoder.encode(fileEntity.getFileName(), StandardCharsets.UTF_8);
+        String encodedFileName = URLEncoder.encode(fileEntity.getFileName(), StandardCharsets.UTF_8).replace("+", "%20");
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"");
