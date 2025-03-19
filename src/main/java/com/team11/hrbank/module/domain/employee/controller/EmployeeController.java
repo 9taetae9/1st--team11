@@ -1,5 +1,6 @@
 package com.team11.hrbank.module.domain.employee.controller;
 
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeCreateRequest;
@@ -9,12 +10,15 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/employees")
 @RequiredArgsConstructor
@@ -55,25 +60,28 @@ public class EmployeeController {
   @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   public ResponseEntity<EmployeeDto> createEmployee(
       @RequestPart(value = "employee") EmployeeCreateRequest employeeCreateRequest,
-      @RequestPart(value = "profile", required = false) MultipartFile file) throws Exception {
+      @RequestPart(value = "profile", required = false) MultipartFile file,
+      HttpServletRequest request) throws Exception {
 
     return ResponseEntity.ok(
-        employeeCommandService.createEmployee(employeeCreateRequest, file)); // API 명세
+        employeeCommandService.createEmployee(employeeCreateRequest, file,request));
   }
 
   // 직원 수정
   @PatchMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-  public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable Long id,
+  public ResponseEntity<EmployeeDto> updateEmployee(
+      @PathVariable Long id,
       @RequestPart(value = "employee") EmployeeUpdateRequest employeeUpdateRequest,
-      @RequestPart(value = "profile", required = false) MultipartFile file) throws IOException {
+      @RequestPart(value = "profile", required = false) MultipartFile file,
+      HttpServletRequest request) throws IOException {
     return ResponseEntity.ok(
-        employeeCommandService.updateEmployee(id, employeeUpdateRequest, file));
+        employeeCommandService.updateEmployee(id, employeeUpdateRequest, file, request));
   }
 
   // 직원 삭제
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
-    employeeCommandService.deleteEmployee(id);
+  public ResponseEntity<Void> deleteEmployee(@PathVariable Long id, HttpServletRequest request) {
+    employeeCommandService.deleteEmployee(id, request);
     return ResponseEntity.noContent().build();
   }
 
@@ -89,13 +97,13 @@ public class EmployeeController {
    **/
   // 직원 목록 조회
   @GetMapping
-  public ResponseEntity<CursorPageResponseEmployeeDto> getListEmployees(
+  public ResponseEntity<CursorPageResponse<EmployeeDto>> getListEmployees(
       @RequestParam(required = false) String nameOrEmail,
       @RequestParam(required = false) String employeeNumber,
       @RequestParam(required = false) String departmentName,
       @RequestParam(required = false) String position,
-      @RequestParam(required = false) LocalDate hireDateFrom,
-      @RequestParam(required = false) LocalDate hireDateTo,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hireDateFrom,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hireDateTo,
       @RequestParam(required = false) EmployeeStatus status,
       @RequestParam(required = false) Long idAfter,
       @RequestParam(required = false) String cursor,
@@ -103,8 +111,7 @@ public class EmployeeController {
       @RequestParam(defaultValue = "name") String sortField,
       @RequestParam(defaultValue = "asc") String sortDirection
   ) {
-
-    // LocalDate -> Instant
+    log.info("직원 목록 조회: nameOrEmail={}, sortField={}, sortDirection={}", nameOrEmail, sortField, sortDirection);
 
     Instant hireDateFromInstant = (hireDateFrom != null)
         ? hireDateFrom.atStartOfDay(ZoneId.of("UTC")).toInstant()
@@ -113,6 +120,7 @@ public class EmployeeController {
     Instant hireDateToInstant = (hireDateTo != null)
         ? hireDateTo.atStartOfDay(ZoneId.of("UTC")).toInstant()
         : null;
+
 
     return ResponseEntity.ok(employeeQueryService.getListEmployees(
         nameOrEmail,
@@ -134,17 +142,16 @@ public class EmployeeController {
   public ResponseEntity<List<EmployeeDistributionDto>> getEmployeeDistribution(
       @RequestParam(defaultValue = "department") String groupBy,
       @RequestParam(defaultValue = "ACTIVE") String status) {
+    log.info("직원 분포 조회: groupBy={}, status={}", groupBy, status);
     return ResponseEntity.ok(employeeQueryService.getEmployeeDistribution(groupBy, status));
 
   }
 
-  // TODO 직원 수 추이 (미완)
   @GetMapping("/stats/trend")
   public ResponseEntity<List<EmployeeTrendDto>> getEmployeeTrend(
-      @RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
       @RequestParam(required = false, defaultValue = "month") String unit) {
-
-    // LocalDate -> Instant
+    log.info("직원 수 추이 조회: from={}, to={}, unit={}", from, to, unit);
 
     Instant fromInstant = (from != null)
         ? from.atStartOfDay(ZoneId.of("UTC")).toInstant()
@@ -161,10 +168,9 @@ public class EmployeeController {
   @GetMapping("/count")
   public ResponseEntity<Long> getEmployeeCount(
       @RequestParam(required = false) EmployeeStatus status,
-      @RequestParam(required = false) LocalDate fromDate,
-      @RequestParam(required = false) LocalDate toDate) {
-
-    // LocalDate -> Instant
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+    log.info("직원 수 조회: status={}, fromDate={}, toDate={}", status, fromDate, toDate);
 
     Instant fromDateInstant = (fromDate != null)
         ? fromDate.atStartOfDay(ZoneId.of("UTC")).toInstant()
