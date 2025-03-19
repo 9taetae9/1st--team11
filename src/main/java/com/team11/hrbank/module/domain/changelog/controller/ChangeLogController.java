@@ -61,16 +61,11 @@ public class ChangeLogController {
 
   @GetMapping("/count") //수정 이력 건수
   public ResponseEntity<Long> getChangeLogsCount(
-      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate fromDate,
-      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate toDate) {
+      @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant toDate) {
 
-    Instant fromInstant = fromDate != null ?
-        fromDate.atStartOfDay().toInstant(ZoneOffset.UTC) : null;
 
-    Instant toInstant = toDate != null ?
-        toDate.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC) : null;
-
-    long changeLogsCount = changeLogService.getChangeLogsCount(fromInstant, toInstant);
+    long changeLogsCount = changeLogService.getChangeLogsCount(fromDate, toDate);
     return ResponseEntity.ok(changeLogsCount);
   }
 }
