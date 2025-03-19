@@ -1,18 +1,17 @@
 package com.team11.hrbank.module.dashboard;
 
-import com.team11.hrbank.module.dashboard.dto.DashboardResponse;
-import com.team11.hrbank.module.domain.employee.EmployeeStatus;
-import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
-import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
-import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
-import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
+import com.team11.hrbank.module.dashboard.dto.DashboardResponse;
+import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
+import com.team11.hrbank.module.domain.employee.EmployeeStatus;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
+import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
+import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

@@ -1,12 +1,15 @@
 package com.team11.hrbank.module.dashboard;
 
 import com.team11.hrbank.module.common.dto.ErrorResponse;
-import com.team11.hrbank.module.dashboard.dto.DashboardResponse;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
+import com.team11.hrbank.module.dashboard.dto.DashboardResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 대시보드 관련 요청을 처리하는 컨트롤러

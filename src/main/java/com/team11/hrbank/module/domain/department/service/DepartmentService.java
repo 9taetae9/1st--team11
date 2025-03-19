@@ -1,28 +1,10 @@
 package com.team11.hrbank.module.domain.department.service;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
-
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.team11.hrbank.module.domain.department.Department;
-//import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
-import com.team11.hrbank.module.domain.department.mapper.DepartmentMapper;
-import com.team11.hrbank.module.domain.department.repository.DepartmentRepository;
+import jakarta.validation.Valid;
 
 public interface DepartmentService {
 

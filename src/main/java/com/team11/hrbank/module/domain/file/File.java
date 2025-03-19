@@ -1,6 +1,6 @@
 package com.team11.hrbank.module.domain.file;
 
-import com.team11.hrbank.module.domain.BaseEntity;  // BaseEntity import
+import com.team11.hrbank.module.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

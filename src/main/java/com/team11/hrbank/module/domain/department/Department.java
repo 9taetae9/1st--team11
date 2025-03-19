@@ -1,16 +1,13 @@
 package com.team11.hrbank.module.domain.department;
 
 import com.team11.hrbank.module.domain.UpdatableEntity;
-import java.time.Instant;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
-
-import com.team11.hrbank.module.domain.BaseEntity;
 
 @Getter
 @Setter

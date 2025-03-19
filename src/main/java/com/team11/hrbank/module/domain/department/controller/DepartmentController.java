@@ -1,8 +1,10 @@
 package com.team11.hrbank.module.domain.department.controller;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
+import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
+import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
+import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
+import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
+import com.team11.hrbank.module.domain.department.service.DepartmentService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,12 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
-import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
-import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
-import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
-import com.team11.hrbank.module.domain.department.service.DepartmentService;
 
 
 @RestController

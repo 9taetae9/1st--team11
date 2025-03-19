@@ -2,7 +2,6 @@ package com.team11.hrbank.module.common.exception;
 
 import com.team11.hrbank.module.common.dto.ErrorResponse;
 import java.net.UnknownHostException;
-import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

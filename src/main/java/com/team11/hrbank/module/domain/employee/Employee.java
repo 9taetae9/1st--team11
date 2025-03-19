@@ -11,7 +11,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,15 +21,12 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "employees")
 public class Employee extends UpdatableEntity {
 
-  @NotNull
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
-  @NotNull
   @Column(name = "email", nullable = false)
   private String email;
 
-  @NotNull
   @Column(name = "employee_number", nullable = false, length = 25)
   private String employeeNumber;
 
@@ -38,11 +34,9 @@ public class Employee extends UpdatableEntity {
   @JoinColumn(name = "department_id")
   private Department department;
 
-  @NotNull
   @Column(name = "\"position\"", nullable = false, length = 50)
   private String position;
 
-  @NotNull
   @Column(name = "hire_date", nullable = false)
   private Instant hireDate;
 

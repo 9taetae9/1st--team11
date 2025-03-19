@@ -2,9 +2,12 @@ package com.team11.hrbank.module.dashboard.dto;
 
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
-import lombok.*;
-
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * 대시보드 응답 DTO
