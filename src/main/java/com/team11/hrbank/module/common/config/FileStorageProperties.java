@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component;
 
 @Getter
 @Setter
-@Component
 @ConfigurationProperties(prefix = "file.storage")
 public class FileStorageProperties {
   private String rootPath;
   private String backupFiles;
   private String errorLogs;
+  private String profileImages;
 }

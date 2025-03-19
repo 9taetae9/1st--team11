@@ -29,6 +29,4 @@ public class File extends BaseEntity {  // BaseEntity 상속받기
     @NotNull
     @Column(name = "size", nullable = false)
     private Long size;  // 파일 크기 추가
-
-    // createdAt, updatedAt은 BaseEntity에서 관리
 }
