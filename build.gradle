@@ -39,6 +39,13 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    //CSV 생성 시 특수문자 처리 개선(사용: BackupFileStorageService의 CSV 생성 로직)
+    implementation 'org.apache.commons:commons-csv:1.10.0'
+    // 파일 작업 간소화
+    implementation 'commons-io:commons-io:2.16.1'
+
     //Querydsl 추가
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"

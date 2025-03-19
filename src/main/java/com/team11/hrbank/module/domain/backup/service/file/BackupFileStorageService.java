@@ -13,6 +13,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.springframework.stereotype.Service;
 
 /**
@@ -26,31 +28,52 @@ public class BackupFileStorageService {
     private static DateTimeFormatter FILE_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
 
     public BackupFileStorageService(FileStorageProperties properties){
-
         this.backupDir = createDirectoryIfNotExists(Paths.get(properties.getBackupFiles()));
         this.errorLogDir = createDirectoryIfNotExists(Paths.get(properties.getErrorLogs()));
     }
 
+//    private Path initDirectory(String path) {
+//        try {
+//            Path dir = Paths.get(path);
+//            if (!Files.exists(dir)) {
+//                Files.createDirectories(dir);
+//                log.info("초기화된 디렉토리: {}", dir.toAbsolutePath());
+//            }
+//            return dir;
+//        } catch (IOException e) {
+//            log.error("디렉토리 초기화 실패: {}", path);
+//            throw new IllegalStateException("백업 시스템 초기화 실패", e);
+//        }
+//    }
 
     private Path createDirectoryIfNotExists(Path directory) {
         try {
             if (!Files.exists(directory)) {
                 Files.createDirectories(directory);
-                log.error("디렉토리 생성 완료: {}", directory);
+                log.info("디렉토리 생성 완료: {}", directory);
             }
             return directory;
         } catch (IOException e) {
-            log.error("디렉토리 생성 실패: {}", directory, e);
+            log.info("디렉토리 생성 실패: {}", directory, e);
             throw new RuntimeException("디렉토리 생성 실패: " + directory, e);
         }
     }
 
+
+    /**
+     * 백업 데이터 csv 파일로 저장
+     * @param backupDataStream 각행의 데이터가 csv 형식으로 포멧된 문자열 스트림
+     * @return 저장된 파일 경로
+     */
     public String saveBackupToCsv(Stream<String> backupDataStream) throws IOException {
-        String filename = "backup_" + System.currentTimeMillis() + ".csv";
+        String filename = "backup_" + FILE_TIMESTAMP_FORMAT.format(Instant.now()) + ".csv";
         Path filePath = backupDir.resolve(filename);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)){
-            writer.write("\uFEFF");
+        try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8);
+            CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)){
+
+            writer.write("\uFEFF"); //BOM 추가 (excel 한글 인코딩 인식)
+
 
             try {
                 backupDataStream.forEach(line -> {
@@ -66,6 +89,40 @@ public class BackupFileStorageService {
             }
         }
         log.info("백업 파일 저장 완료: {}", filePath);
+        return filePath.toString();
+    }
+
+    /**
+     * 직원 데이터 CSV 생성 - 헤더와 데이터 분리 버전
+     * @param headers CSV 헤더
+     * @param dataStream 데이터 스트림
+     * @return 저장된 파일 경로
+     */
+    public String createEmployeeBackupCsv(String[] headers, Stream<String[]> dataStream) throws IOException {
+        String filename = "employees_backup_" + FILE_TIMESTAMP_FORMAT.format(Instant.now()) + ".csv";
+        Path filePath = backupDir.resolve(filename);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8);
+            CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
+
+            writer.write("\uFEFF");
+
+            // 헤더 작성
+            csvPrinter.printRecord((Object[]) headers);
+
+            // 데이터 스트림 작성
+            dataStream.forEach(record -> {
+                try {
+                    csvPrinter.printRecord((Object[]) record);
+                } catch (IOException e) {
+                    throw new UncheckedIOException("CSV 데이터 쓰기 실패", e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+
+        log.info("직원 백업 파일 저장 완료: {}", filePath);
         return filePath.toString();
     }
 
