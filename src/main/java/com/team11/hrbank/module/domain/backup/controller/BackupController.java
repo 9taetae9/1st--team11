@@ -9,6 +9,7 @@ import com.team11.hrbank.module.domain.backup.service.BackupService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/backups")
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class BackupController {
     @PostMapping
     public ResponseEntity<BackupDto> createBackup(HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
+        log.info("백업 생성 요청: 요청 ip = {}", ipAddress);
         BackupHistory backupHistory = backupService.performBackup(ipAddress);
         return ResponseEntity.ok(backupMapper.toDto(backupHistory));
     }
@@ -67,7 +70,9 @@ public class BackupController {
             @RequestParam(required = false, defaultValue = "DESC") String sortDirection
     ) {
 
-        CursorPageResponse<BackupDto> response = backupService.getBackupHistoriesWithCursor(worker, status, startedAtFrom, startedAtTo, idAfter, cursor, size, sortField, sortDirection);
+        CursorPageResponse<BackupDto> response = backupService.getBackupHistoriesWithCursor(
+            worker, status, startedAtFrom, startedAtTo, idAfter, cursor, size, sortField, sortDirection);
+
         return ResponseEntity.ok(response);
     }
 }
