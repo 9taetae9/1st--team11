@@ -6,6 +6,8 @@ import com.team11.hrbank.module.domain.changelog.ChangeLog;
 import com.team11.hrbank.module.domain.changelog.ChangeLogDiff;
 import com.team11.hrbank.module.domain.changelog.DiffEntry;
 import com.team11.hrbank.module.domain.changelog.HistoryType;
+import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
+import com.team11.hrbank.module.domain.department.Department;
 import com.team11.hrbank.module.domain.department.repository.DepartmentRepository;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
@@ -16,64 +18,59 @@ import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.service.FileService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmployeeCommandService {
 
   private final EmployeeRepository employeeRepository;
   private final FileService fileService;
-  //
   private final DepartmentRepository departmentRepository;
-
-  //
   private final EmployeeMapper employeeMapper;
-  //
   private final EmployeeNumberGenerator employeeNumberGenerator;
-//  private final FileRepository fileRepository;
-
-  private static final Logger log = LoggerFactory.getLogger(EmployeeCommandService.class);
+  private final ChangeLogRepository changeLogRepository;
 
   // 직원 생성
   @Transactional
   public EmployeeDto createEmployee(EmployeeCreateRequest employeeCreateRequest,
-      MultipartFile file) throws Exception {
+      MultipartFile file, HttpServletRequest request) throws Exception {
 
-    File savedProfileImage = null;
     /** 요구 조건 : 이메일 중복 여부 검증 -> 레포지토리 단에서 email 컬럼만 들고올 수 있는 메서드 작성 **/
-    if (
-        employeeRepository.findAllEmails().stream()
-            .anyMatch(email -> email.equals(employeeCreateRequest.email()))
-    ) {
+    if (employeeRepository.findAllEmails().stream()
+            .anyMatch(email -> email.equals(employeeCreateRequest.email()))) {
       throw new IllegalArgumentException("email(" + employeeCreateRequest.email() + ")은 이미 존재합니다.");
     }
 
+    File savedProfileImage = null;
     if (file != null && !file.isEmpty()) {
       savedProfileImage = fileService.uploadFile(file);
       log.info("직원 프로필 이미지 업로드 성공: {}", savedProfileImage.getFileName());
     }
+
+    //부서 검증
+    Department department = departmentRepository.findById(employeeCreateRequest.departmentId())
+        .orElseThrow(() -> ResourceNotFoundException.of("Department", "departmentId",
+            employeeCreateRequest.departmentId()));
 
     // 직원 생성
     Employee employee = Employee.builder()
         .name(employeeCreateRequest.name())
         .email(employeeCreateRequest.email())
         .employeeNumber(employeeNumberGenerator.generateEmployeeNumber())
-        .department(departmentRepository.findById(
-            employeeCreateRequest.departmentId()).orElseThrow(
-            () -> new ResourceNotFoundException("부서(" + employeeCreateRequest.departmentId()
-                + ")가 존재하지 않습니다.")))
+        .department(department)
         .position(employeeCreateRequest.position())
         .hireDate(employeeCreateRequest.hireDate())
         .profileImage(savedProfileImage)
@@ -84,11 +81,14 @@ public class EmployeeCommandService {
     employeeRepository.save(employee);
 
     // 직원 변경 이력 생성
-    ChangeLog.create(employee,
+    InetAddress ipAddress = getIpAddress(request);
+    ChangeLog changeLog = ChangeLog.create(employee,
         employee.getEmployeeNumber(),
         employeeCreateRequest.memo(),
-        InetAddress.getByName("127.0.0.1"),
+        ipAddress,
         HistoryType.CREATED);
+
+//    changeLogRepository.save(changeLog);
 
     return employeeMapper.toDto(employee);
   }
@@ -96,282 +96,140 @@ public class EmployeeCommandService {
   // 직원 수정
   @Transactional
   public EmployeeDto updateEmployee(Long id, EmployeeUpdateRequest employeeUpdateRequest,
-      MultipartFile file) throws IOException {
+      MultipartFile file, HttpServletRequest request) throws IOException {
 
     Employee employee = employeeRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("employee(" + id + ")는 존재하지 않습니다."));
+        .orElseThrow(() -> ResourceNotFoundException.of("Employee", "id", id));
 
-    if (employeeUpdateRequest.name() != null) {
-      // 직원 수정 이력 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "이름 변경",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.UPDATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
+    List<DiffEntry> changes = new ArrayList<>();
+    boolean hasChanges = false;
 
-      List<DiffEntry> changes = Arrays.asList(
-          DiffEntry.of("이름", employee.getName(), employeeUpdateRequest.name()));
+    InetAddress ipAddress = getIpAddress(request);
 
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-      // 직원 이름 업데이트
+    // 이름 변경
+    if (employeeUpdateRequest.name() != null && !employeeUpdateRequest.name()
+        .equals(employee.getName())) {
+      changes.add(DiffEntry.of("이름", employee.getName(), employeeUpdateRequest.name()));
       employee.updateName(employeeUpdateRequest.name());
-
+      hasChanges = true;
     }
 
-    if (employeeUpdateRequest.email() != null) {
-      /** 요구 조건 : 이메일 중복 여부 검증, 중복으로 검증 로직 분리 고려 (된다면)**/
-      if (
-          employeeRepository.findAllEmails().stream()
-              .anyMatch(email -> email.equals(employeeUpdateRequest.email()))
-      ) {
+    // 이메일 변경
+    if (employeeUpdateRequest.email() != null && !employeeUpdateRequest.email()
+        .equals(employee.getEmail())) {
+      // 중복 검사 (자기 자신 제외)
+      if (employeeRepository.findAllEmails().stream()
+          .filter(email -> !email.equals(employee.getEmail()))
+          .anyMatch(email -> email.equals(employeeUpdateRequest.email()))) {
         throw new IllegalArgumentException(
-            "email(" + employeeUpdateRequest.email() + ")은 이미 존재합니다.");
+            "email: " + employeeUpdateRequest.email() + " 은 이미 존재합니다.");
       }
 
-      // 직원 수정 이력 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "이메일 수정",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.UPDATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-
-      List<DiffEntry> changes =
-          Arrays.asList(
-              DiffEntry.of("이메일", employee.getEmail(), employeeUpdateRequest.email()));
-
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-      // 직원 이메일 업데이트
+      changes.add(DiffEntry.of("이메일", employee.getEmail(), employeeUpdateRequest.email()));
       employee.updateEmail(employeeUpdateRequest.email());
+      hasChanges = true;
     }
 
-    if (employeeUpdateRequest.departmentId() != null) {
-      // 직원 수정 이력 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "부서 수정",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.UPDATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-
-      List<DiffEntry> changes =
-          Arrays.asList(
-              DiffEntry.of("부서",
-                  employee.getDepartment().getName(),
-                  String.valueOf(
-                      departmentRepository.findById(employeeUpdateRequest.departmentId())
-                          .orElseThrow(
-                              () -> new ResourceNotFoundException("해당 부서는 존재하지 않습니다.")))
-              )
-          );
-
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-      // 직원 부서 업데이트
-      employee.updateDepartment(departmentRepository
-          .findById(employeeUpdateRequest.departmentId())
+    if (employeeUpdateRequest.departmentId() != null && (employee.getDepartment() == null
+        || !employeeUpdateRequest.departmentId().equals(employee.getDepartment().getId()))) {
+      Department newDepartment = departmentRepository.findById(employeeUpdateRequest.departmentId())
           .orElseThrow(() -> ResourceNotFoundException.of("Department", "id",
-              employeeUpdateRequest.departmentId())));
+              employeeUpdateRequest.departmentId()));
+
+      String oldDeptName =
+          employee.getDepartment() != null ? employee.getDepartment().getName() : "";
+      changes.add(DiffEntry.of("부서", oldDeptName, newDepartment.getName()));
+      employee.updateDepartment(newDepartment);
+      hasChanges = true;
     }
 
-    if (employeeUpdateRequest.position() != null) {
-
-      // 직원 수정 이력 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "직함 수정",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.UPDATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-
-      List<DiffEntry> changes =
-          Arrays.asList(
-              DiffEntry.of("직함", employee.getPosition(), employeeUpdateRequest.position()));
-
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-      // 직원 직함 변경
+    // 직함 변경
+    if (employeeUpdateRequest.position() != null && !employeeUpdateRequest.position()
+        .equals(employee.getPosition())) {
+      changes.add(DiffEntry.of("직함", employee.getPosition(), employeeUpdateRequest.position()));
       employee.updatePosition(employeeUpdateRequest.position());
+      hasChanges = true;
     }
-    if (employeeUpdateRequest.hireDate() != null) {
 
-      // 직원 수정 이력 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "입사일 수정",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.UPDATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-
-      List<DiffEntry> changes =
-          Arrays.asList(
-              DiffEntry.of("입사일", employee.getHireDate().toString(),
-                  employeeUpdateRequest.hireDate().toString()));
-
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-      // 직원 입사일 변경
+    // 입사일 변경
+    if (employeeUpdateRequest.hireDate() != null && !employeeUpdateRequest.hireDate()
+        .equals(employee.getHireDate())) {
+      changes.add(DiffEntry.of("입사일",
+          employee.getHireDate() != null ? employee.getHireDate().toString() : "",
+          employeeUpdateRequest.hireDate().toString()));
       employee.updateHireDate(employeeUpdateRequest.hireDate());
+      hasChanges = true;
     }
-    if (employeeUpdateRequest.status() != null) {
 
-      // 직원 수정 이력 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "상태 수정",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.UPDATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-
-      List<DiffEntry> changes =
-          Arrays.asList(
-              DiffEntry.of("상태", employee.getStatus().toString(),
-                  employeeUpdateRequest.status().toString()));
-
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-      // 직원 상태 변경
+    // 상태 변경
+    if (employeeUpdateRequest.status() != null && !employeeUpdateRequest.status()
+        .equals(employee.getStatus())) {
+      changes.add(DiffEntry.of("상태",
+          employee.getStatus() != null ? employee.getStatus().toString() : "",
+          employeeUpdateRequest.status().toString()));
       employee.updateStatus(employeeUpdateRequest.status());
+      hasChanges = true;
     }
-    if (employeeUpdateRequest.memo() != null) {
 
-      // 직원 수정 이력 생성 - 메모 생성
-      ChangeLog changeLog;
-      try {
-        changeLog = ChangeLog.create(
-            employee,
-            employee.getEmployeeNumber(),
-            "메모 생성",
-            InetAddress.getByName("127.0.0.1"),
-            HistoryType.CREATED
-        );
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-
-      List<DiffEntry> changes =
-          Arrays.asList(
-              DiffEntry.of("메모 수정", "",
-                  employeeUpdateRequest.memo()));
-
-      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-      changeLog.setChangeLogDiff(changeLogDiff);
-
-    }
-    if (file != null) {
-      log.info("파일 업데이트 시작 - 원본 파일명: {}, 크기: {} bytes",
+    // 프로필 이미지 변경
+    if (file != null && !file.isEmpty()) {
+      log.info("파일 업데이트 - 원본 파일명: {}, 크기: {}bytes",
           file.getOriginalFilename(), file.getSize());
 
-      if (file.isEmpty()) {
-        log.warn("업로드된 파일이 비어 있습니다. 프로필 이미지 업데이트를 건너뜁니다.");
-      } else {
-        // 직원 수정 이력 생성 - 파일 수정
-        ChangeLog changeLog;
-        try {
-          changeLog = ChangeLog.create(
-              employee,
-              employee.getEmployeeNumber(),
-              "파일 수정",
-              InetAddress.getByName("127.0.0.1"),
-              HistoryType.UPDATED
-          );
-        } catch (UnknownHostException e) {
-          throw new RuntimeException(e);
-        }
+      try {
+        // 있으면 업데이트, 없으면 새로 업로드
+        File newProfileImage = fileService.updateFile(employee.getProfileImage(), file);
 
-        // FileService를 사용하여 프로필 이미지 업데이트
-        try {
-          log.info("기존 프로필 이미지: {}",
-              (employee.getProfileImage() != null) ?
-                  employee.getProfileImage().getId() + " - " + employee.getProfileImage()
-                      .getFileName() : "없음");
+        log.info("새 프로필 이미지 생성됨: ID={}, 파일명={}",
+            newProfileImage.getId(), newProfileImage.getFileName());
 
-          // 기존 이미지가 있으면 업데이트, 없으면 새로 업로드
-          File newProfileImage = fileService.updateFile(employee.getProfileImage(), file);
+        String oldFileName = employee.getProfileImage() != null ?
+            employee.getProfileImage().getFileName() : "없음";
 
-          log.info("새 프로필 이미지 생성됨: ID={}, 파일명={}, 경로={}",
-              newProfileImage.getId(), newProfileImage.getFileName(),
-              newProfileImage.getFilePath());
-
-          employee.updateProfileImage(newProfileImage);
-          log.info("직원 프로필 이미지 업데이트 성공: {}", newProfileImage.getFileName());
-        } catch (IOException e) {
-          log.error("프로필 이미지 업데이트 실패: {}", e.getMessage(), e);
-          throw new RuntimeException("프로필 이미지 업데이트 중 오류 발생", e);
-        }
-
-        List<DiffEntry> changes =
-            Arrays.asList(
-                DiffEntry.of("파일 수정",
-                    (employee.getProfileImage() != null
-                        && employee.getProfileImage().getFileName() != null) ?
-                        employee.getProfileImage().getFileName() : "없음",
-                    file.getOriginalFilename() != null ? file.getOriginalFilename()
-                        : file.getName()));
-
-        ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
-        changeLog.setChangeLogDiff(changeLogDiff);
+        changes.add(DiffEntry.of("프로필 이미지", oldFileName, newProfileImage.getFileName()));
+        employee.updateProfileImage(newProfileImage);
+        hasChanges = true;
+      } catch (IOException e) {
+        log.error("프로필 이미지 업데이트 실패: {}", e.getMessage(), e);
+        throw new IOException("프로필 이미지 업데이트 중 오류 발생", e);
       }
     }
 
+    //변경 이력 저장
+    if (hasChanges || employeeUpdateRequest.memo() != null) {
+      // 메모만 있는 경우
+      if (!hasChanges) {
+        changes.add(DiffEntry.of("메모", "", employeeUpdateRequest.memo()));
+      }
+
+      // 변경 이력 생성
+      String memo = employeeUpdateRequest.memo() != null ? employeeUpdateRequest.memo() : "직원 정보 수정";
+
+      ChangeLog changeLog = ChangeLog.create(
+          employee,
+          employee.getEmployeeNumber(),
+          memo,
+          ipAddress,
+          HistoryType.UPDATED
+      );
+
+      // 변경 세부 내역 저장
+      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
+      changeLog.setChangeLogDiff(changeLogDiff);
+
+    }
     return employeeMapper.toDto(employee);
   }
 
   // 직원 삭제
   @Transactional
-  public void deleteEmployee(Long id) {
+  public void deleteEmployee(Long id, HttpServletRequest request) {
     // 직원 조회
     Employee employee = employeeRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("employee(" + id + ")는 존재하지 않습니다."));
 
     // 프로필 이미지가 존재하는 경우 처리
     if (employee.getProfileImage() != null && employee.getProfileImage().getId() != null) {
-      // FileService를 사용하여 파일 삭제
       try {
         boolean deleted = fileService.deleteFile(employee.getProfileImage());
         if (deleted) {
@@ -381,11 +239,28 @@ public class EmployeeCommandService {
         }
       } catch (Exception e) {
         log.error("프로필 이미지 삭제 중 오류 발생: {}", e.getMessage());
-        // 이미지 삭제 실패해도 직원 삭제는 진행
       }
     }
 
     // 직원 상태 변경 (퇴사 처리)
     employee.updateStatus(EmployeeStatus.RESIGNED);
+
+    //삭제 이력 생성
+    try {
+      InetAddress ipAddress = getIpAddress(request);
+      ChangeLog.create(employee, employee.getEmployeeNumber(), "작원 삭제 처리", ipAddress,
+          HistoryType.DELETED);
+    } catch (UnknownHostException e) {
+      log.error("IP 주소 조회 실패: {}", e.getMessage());
+    }
   }
+
+  private InetAddress getIpAddress(HttpServletRequest request) throws UnknownHostException {
+    String ipAddress = request.getRemoteAddr();
+    if (ipAddress == null || ipAddress.isEmpty() || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
+      return InetAddress.getByName("127.0.0.1");
+    }
+    return InetAddress.getByName(ipAddress);
+  }
+
 }
