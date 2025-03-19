@@ -1,12 +1,19 @@
 package com.team11.hrbank.module.domain.backup.service.file;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import java.io.*;
+import com.team11.hrbank.module.common.config.FileStorageProperties;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * 백업 데이터를 CSV 파일로 저장하는 서비스 (OOM 방지 적용)
@@ -14,70 +21,107 @@ import java.util.stream.Stream;
 @Slf4j
 @Service
 public class BackupFileStorageService {
-    private static final String BACKUP_DIR = "./storage/files/backups/";
-    private static final String ERROR_LOG_DIR = "./storage/files/logs/";
+    private final Path backupDir;
+    private final Path errorLogDir;
+    private static DateTimeFormatter FILE_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
 
-    static {
-        new File(BACKUP_DIR).mkdirs(); // 디렉토리 자동 생성
-        new File(ERROR_LOG_DIR).mkdirs();
+    public BackupFileStorageService(FileStorageProperties properties){
+
+        this.backupDir = createDirectoryIfNotExists(Paths.get(properties.getBackupFiles()));
+        this.errorLogDir = createDirectoryIfNotExists(Paths.get(properties.getErrorLogs()));
     }
 
-    /**
-     * 대용량 데이터를 효율적으로 CSV로 저장하는 방식 (Stream 지원)
-     * @param backupDataStream 스트림 형태의 백업 데이터
-     * @return 저장된 파일 경로
-     * @throws IOException 파일 저장 실패 시 예외 발생
-     */
-    public String saveBackupToCsv(Stream<String> backupDataStream) throws IOException {
-        String filePath = BACKUP_DIR + "backup_" + System.currentTimeMillis() + ".csv";
 
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
-            writer.write("\uFEFF"); // BOM 추가 (Excel 한글 깨짐 방지)
-
-            backupDataStream.forEach(line -> {
-                try {
-                    writer.write(line);
-                    writer.newLine();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+    private Path createDirectoryIfNotExists(Path directory) {
+        try {
+            if (!Files.exists(directory)) {
+                Files.createDirectories(directory);
+                log.error("디렉토리 생성 완료: {}", directory);
+            }
+            return directory;
+        } catch (IOException e) {
+            log.error("디렉토리 생성 실패: {}", directory, e);
+            throw new RuntimeException("디렉토리 생성 실패: " + directory, e);
         }
-        return filePath;
+    }
+
+    public String saveBackupToCsv(Stream<String> backupDataStream) throws IOException {
+        String filename = "backup_" + System.currentTimeMillis() + ".csv";
+        Path filePath = backupDir.resolve(filename);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)){
+            writer.write("\uFEFF");
+
+            try {
+                backupDataStream.forEach(line -> {
+                    try {
+                        writer.write(line);
+                        writer.newLine();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException("csv 쓰기 실패", e);
+                    }
+                });
+            } catch (UncheckedIOException e) {
+                throw e.getCause();//원래 ioexception로 재변환뒤 위로 던짐
+            }
+        }
+        log.info("백업 파일 저장 완료: {}", filePath);
+        return filePath.toString();
     }
 
     /**
      * 파일 삭제 메서드
      * @param filePath 삭제할 파일 경로
+     * @return 삭제 성공 여부
      */
-    public void deleteFile(String filePath) {
-        File file = new File(filePath);
-        if (file.exists() && file.delete()) {
-            log.info("파일 삭제 완료: {}", filePath);
-        } else {
-            log.warn("파일 삭제 실패 또는 존재하지 않음: {}", filePath);
+    public boolean deleteFile(String filePath) {
+        try {
+            Path path = Paths.get(filePath);
+            boolean deleted = Files.deleteIfExists(path);
+            if (deleted) {
+                log.info("파일 삭제 완료: {}", filePath);
+            } else {
+                log.info("파일이 존재하지 않음: {}", filePath);
+            }
+            return deleted;
+        } catch (IOException e) {
+            log.error("파일 삭제 실패: {}", filePath, e);
+            return false;
         }
     }
 
     /**
-     * 백업 실패 시 에러 로그를 저장하는 메서드 (로그 저장 실패 방지)
+     * 백업 실패 시 에러 로그를 저장하는 메서드
+     * @return 저장된 .log 파일 경로, 실패시 null
      */
     public String saveErrorLog(Exception e) {
-        String errorFilePath = ERROR_LOG_DIR + "error_log_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".log";
+        String filename = "error_log_" + FILE_TIMESTAMP_FORMAT.format(Instant.now()) + ".log";
+        Path errorFilePath = errorLogDir.resolve(filename);
 
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(errorFilePath), StandardCharsets.UTF_8))) {
-            writer.write("[ERROR] 백업 실패: " + LocalDateTime.now());
+        try (BufferedWriter writer = Files.newBufferedWriter(errorFilePath, StandardCharsets.UTF_8)) {
+            writer.write("ERROR 백업 실패: " + Instant.now());
             writer.newLine();
-            writer.write(e.getMessage());
+
+            writer.write("메시지: " + (e.getMessage() != null ? e.getMessage() : "없음"));
             writer.newLine();
-            for (StackTraceElement el : e.getStackTrace()) {
-                writer.write(el.toString());
+            for (StackTraceElement se : e.getStackTrace()) {
+                writer.write(" "+se.toString());
                 writer.newLine();
             }
+
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                writer.write("cause exception: " + cause.getClass().getName());
+                writer.newLine();
+                writer.write("cause message: " + (cause.getMessage() != null ? cause.getMessage() : "없음"));
+                writer.newLine();
+            }
+
+            log.info("error log saved: {}", errorFilePath);
+            return errorFilePath.toString();
         } catch (IOException ioException) {
-            log.error("에러 로그 파일 저장 실패", ioException);
+            log.error("fail to save error log file", ioException);
             return null;
         }
-        return errorFilePath;
     }
 }
