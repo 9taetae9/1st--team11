@@ -11,14 +11,14 @@ import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
-  
+
   @Mapping(source = "department.id", target = "departmentId")
   @Mapping(source = "department.name", target = "departmentName")
   @Mapping(source = "profileImage.id", target = "profileImageId")
-  @Mapping(source = "hireDate", target = "hireDate", qualifiedByName = "instantTolLocalDate")
+  @Mapping(source = "hireDate", target = "hireDate", qualifiedByName = "instantToLocalDate")
   EmployeeDto toDto(Employee employee);
 
-  @Named("instantTolLocalDate")
+  @Named("instantToLocalDate")
   default LocalDate instantTolLocalDate(Instant instant) {
     return instant.atZone(ZoneId.of("UTC")).toLocalDate();
   }

@@ -16,8 +16,6 @@ import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @Entity
@@ -37,7 +35,6 @@ public class Employee extends UpdatableEntity {
   private String employeeNumber;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @OnDelete(action = OnDeleteAction.RESTRICT)
   @JoinColumn(name = "department_id")
   private Department department;
 
