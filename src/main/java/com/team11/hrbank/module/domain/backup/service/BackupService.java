@@ -8,11 +8,13 @@ import com.team11.hrbank.module.domain.backup.dto.BackupDto;
 import com.team11.hrbank.module.domain.backup.mapper.BackupMapper;
 import com.team11.hrbank.module.domain.backup.repository.BackupHistoryRepository;
 import com.team11.hrbank.module.domain.backup.repository.BackupSpecifications;
+import com.team11.hrbank.module.domain.backup.service.data.BackupDataService;
 import com.team11.hrbank.module.domain.backup.service.file.BackupFileStorageService;
 import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
 import com.team11.hrbank.module.domain.file.File;
-import com.team11.hrbank.module.domain.file.repository.FileRepository;
+import com.team11.hrbank.module.domain.file.service.FileService;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +33,9 @@ public class BackupService {
 
     private final BackupHistoryRepository backupHistoryRepository;
     private final BackupFileStorageService fileStorageService;
-    private final FileRepository fileRepository;
+    private final BackupDataService backupDataService;
+    private final FileService fileService;
     private final ChangeLogRepository changeLogRepository;
-
-
     private final BackupMapper backupMapper;
 
     /**
@@ -51,54 +52,69 @@ public class BackupService {
         log.info("백업 실행 요청 받음 - 요청자 IP: {}", workerIp);
 
         Instant lastBackupTime = backupHistoryRepository.findLatestCompletedBackupTime();
-
-
         boolean isChanged;
         if (lastBackupTime == null) {
             isChanged = true;
-            log.info("첫 백업");
+            log.info("첫 백업 실행");
         }else{
             long changesCount = changeLogRepository.countByDateRangeFrom(lastBackupTime);
             isChanged = changesCount > 0;
             log.info("last backup time: {},. changes count: {}", lastBackupTime, changesCount);
         }
 
+        //변경 사항 없는 경우 skip
         if(!isChanged){
             BackupHistory skippedHistory = saveBackupHistory(workerIp, BackupStatus.SKIPPED, null);
-            log.info("백업 불필요 - SKIPPED 상태로 저장됨, ID: {}", skippedHistory.getId());
+            log.info("백업 불필요 - SKIPPED 상태로 저장, ID: {}", skippedHistory.getId());
             return skippedHistory;
         }
 
         BackupHistory backupHistory = saveBackupHistory(workerIp, BackupStatus.IN_PROGRESS, null);
+        log.info("백업 시작 - 이력 ID: {}", backupHistory.getId());
 
         File backupFile = null;
         try {
 
-            String backupFilePath = null;
+            String backupFilePath = fileStorageService.saveBackupToCsv(backupDataService.getAllDataForBackup());
+            log.info("백업 파일 생성 완료: {}", backupFilePath);
 
-            backupFile = saveBackupFile(backupFilePath);
+            backupFile = createFileEntity(backupFilePath);
 
             backupHistory.setStatus(BackupStatus.COMPLETED);
             backupHistory.setEndedAt(Instant.now());
             backupHistory.setFile(backupFile);
             backupHistoryRepository.save(backupHistory);
+
             log.info("백업 완료 - 저장된 파일: {}", backupFilePath);
+            return backupHistory;
         } catch (IOException e) {
+            log.error("백업 실패", e);
+
             if (backupFile != null) {
-                fileStorageService.deleteFile(backupFile.getFilePath());
-                fileRepository.delete(backupFile);
+                log.info("실패한 백업 파일 삭제 시도: {}", backupFile.getFilePath());
+                fileService.deleteFile(backupFile);
             }
 
-            File errorLogFile = saveErrorLogFile(e);
-            backupHistory.setStatus(BackupStatus.FAILED);
-            backupHistory.setEndedAt(Instant.now());
-            backupHistory.setFile(errorLogFile);
-            backupHistoryRepository.save(backupHistory);
-            log.error("백업 실패 - 에러 로그 저장 경로: {}", errorLogFile.getFilePath(), e);
-            throw new RuntimeException("백업 실패", e);
-        }
+            try {
+                String errorLogPath = fileStorageService.saveErrorLog(e);
+                File errorLogFile = createFileEntity(errorLogPath);
 
-        return backupHistory;
+                backupHistory.setStatus(BackupStatus.FAILED);
+                backupHistory.setEndedAt(Instant.now());
+                backupHistory.setFile(errorLogFile);
+                backupHistoryRepository.save(backupHistory);
+
+                log.info("백업 실패 - 에러 로그 저장: {}", errorLogPath);
+            } catch (Exception ex) {
+                log.error("에러 로그 저장 실패", ex);
+
+                backupHistory.setStatus(BackupStatus.FAILED);
+                backupHistory.setEndedAt(Instant.now());
+                backupHistoryRepository.save(backupHistory);
+            }
+
+            throw new RuntimeException("백업 실패: " + e.getMessage(), e);
+        }
     }
 
     private BackupHistory saveBackupHistory(String worker, BackupStatus status, File file) {
@@ -111,27 +127,30 @@ public class BackupService {
     }
 
     /**
-     * 백업된 파일 정보를 `files` 테이블에 저장
+     * 파일 엔티티 생성
      */
-    private File saveBackupFile(String filePath) {
-        File file = new File();
-        file.setFileName(filePath.substring(filePath.lastIndexOf("/") + 1));
-        file.setFilePath(filePath);
-        file.setFormat("CSV");
-        file.setSize(new java.io.File(filePath).length());
-        return fileRepository.save(file);
-    }
-
-    /**
-     * 에러 로그 파일을 생성하고 `files` 테이블에 저장
-     */
-    private File saveErrorLogFile(Exception e) {
-        String errorLogPath = fileStorageService.saveErrorLog(e);
-        if (errorLogPath == null) {
-            log.error("에러 로그 파일 저장 실패 - 원인: {}", e.getMessage(), e);
-            return null;
+    private File createFileEntity(String filePath) throws IOException{
+        if (filePath == null || filePath.isEmpty()) {
+            throw new IllegalArgumentException("파일 경로가 유효하지 않습니다.");
         }
-        return saveBackupFile(errorLogPath);
+
+        java.io.File actualFile = new java.io.File(filePath);
+        if (!actualFile.exists()) {
+            throw new IOException("파일이 존재하지 않습니다: " + filePath);
+        }
+
+        File file = new File();
+//        file.setFileName(filePath.substring(filePath.lastIndexOf("/") + 1));
+        file.setFileName(Paths.get(filePath).getFileName().toString());
+        file.setFilePath(filePath);
+
+        String fileName = file.getFileName();
+        int lastDotIndex = fileName.lastIndexOf('.');
+        String format = lastDotIndex > 0 ? fileName.substring(lastDotIndex + 1).toUpperCase() : "";
+        file.setFormat(format);
+
+        file.setSize(actualFile.length());
+        return fileService.saveFile(file);
     }
 
     /**
@@ -170,6 +189,9 @@ public class BackupService {
     }
 
 
+    /**
+     *커서기반 페이징으로 백업 이력 조회
+     */
     @Transactional(readOnly = true)
     public CursorPageResponse<BackupDto> getBackupHistoriesWithCursor(
         String worker, BackupStatus status,
@@ -183,13 +205,15 @@ public class BackupService {
         }
 
         // 정렬 필드 매핑
-        String entitySortField = "startedAt".equals(sortField) ? "startAt" : sortField;
+        String entitySortField = mapSortField(sortField);
+
+        // 정렬 방향 설정
+        Sort sort = "DESC".equalsIgnoreCase(sortDirection) ?
+            Sort.by(entitySortField).descending() :
+            Sort.by(entitySortField).ascending();
 
         // 페이징 설정
-        Pageable pageable = PageRequest.of(0, size,
-            sortDirection.equalsIgnoreCase("DESC") ?
-                Sort.by(entitySortField).descending() :
-                Sort.by(entitySortField).ascending());
+        Pageable pageable = PageRequest.of(0, size, sort);
 
         // 백업 이력 조회
         Page<BackupHistory> backupHistories = getFilteredBackups(
@@ -208,5 +232,13 @@ public class BackupService {
             lastId,
             size,
             backupHistories.getTotalElements());
+    }
+
+    private String mapSortField(String sortField) {
+        if (sortField == null || sortField.equals("startedAt")) {
+            return "startAt";
+        }
+
+        return sortField;
     }
 }

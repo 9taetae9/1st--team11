@@ -32,20 +32,6 @@ public class BackupFileStorageService {
         this.errorLogDir = createDirectoryIfNotExists(Paths.get(properties.getErrorLogs()));
     }
 
-//    private Path initDirectory(String path) {
-//        try {
-//            Path dir = Paths.get(path);
-//            if (!Files.exists(dir)) {
-//                Files.createDirectories(dir);
-//                log.info("초기화된 디렉토리: {}", dir.toAbsolutePath());
-//            }
-//            return dir;
-//        } catch (IOException e) {
-//            log.error("디렉토리 초기화 실패: {}", path);
-//            throw new IllegalStateException("백업 시스템 초기화 실패", e);
-//        }
-//    }
-
     private Path createDirectoryIfNotExists(Path directory) {
         try {
             if (!Files.exists(directory)) {

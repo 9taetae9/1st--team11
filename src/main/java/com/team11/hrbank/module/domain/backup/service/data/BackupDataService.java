@@ -122,7 +122,7 @@ public class BackupDataService {
             .toArray(String[]::new)))
     );
 
-    // 엔티티 구분을 위한 헤더 추가
+    // 엔티티 구분을 위한 헤더 + CSV 데이터 스트림
     return Stream.concat(
         Stream.of("## EMPLOYEES ##"),
         Stream.concat(
