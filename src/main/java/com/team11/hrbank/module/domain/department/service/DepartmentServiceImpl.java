@@ -1,5 +1,6 @@
 package com.team11.hrbank.module.domain.department.service;
 
+import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.department.Department;
 import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
@@ -7,6 +8,7 @@ import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
 import com.team11.hrbank.module.domain.department.mapper.DepartmentMapper;
 import com.team11.hrbank.module.domain.department.repository.DepartmentRepository;
+import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -14,6 +16,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,19 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
+@RequiredArgsConstructor
 public class DepartmentServiceImpl implements DepartmentService {
 
   private final DepartmentRepository departmentRepository;
   private final DepartmentMapper departmentMapper;
-  //  private final EmployeeRepository employeeRepository;
-
-
-  public DepartmentServiceImpl(DepartmentRepository departmentRepository, DepartmentMapper departmentMapper/*, EmployeeRepository employeeRepository*/) {
-    this.departmentRepository = departmentRepository;
-    this.departmentMapper = departmentMapper;
-//    this.employeeRepository = employeeRepository;
-  }
-
+  private final EmployeeRepository employeeRepository;
 
   /*
    * 부서 생성
@@ -45,7 +41,8 @@ public class DepartmentServiceImpl implements DepartmentService {
   public DepartmentDto createDepartment(DepartmentCreateRequest request) {
     // 이름 중복 검사
     if (departmentRepository.existsByName(request.getName())) {
-      throw new IllegalArgumentException("Department already exists with name: " + request.getName());
+      throw new IllegalArgumentException(
+          "Department already exists with name: " + request.getName());
     }
 
     Department department = departmentMapper.toDepartment(request);
@@ -69,7 +66,8 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     if (request.getName() != null && !request.getName().equals(department.getName())) {
       if (departmentRepository.existsByName(request.getName())) {
-        throw new IllegalArgumentException("Department already exists with name: " + request.getName());
+        throw new IllegalArgumentException(
+            "Department already exists with name: " + request.getName());
       }
     }
 
@@ -85,13 +83,12 @@ public class DepartmentServiceImpl implements DepartmentService {
   @Override
   public void deleteDepartment(Long id) {
     Department department = departmentRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Department not found: " + id));
+        .orElseThrow(() -> ResourceNotFoundException.of("Department", "id", id));
 
-//    // 소속 직원이 있는지 확인하는 로직은 EmployeeRepository 구현 후 활성화
-//     long employeeCount = employeeRepository.countByDepartmentId(id);
-//     if (employeeCount > 0) {
-//       throw new IllegalArgumentException("Cannot delete department with associated employees");
-//     }
+    long employeeCount = employeeRepository.countByDepartmentId(id);
+    if (employeeCount > 0) {
+      throw new IllegalArgumentException("소속 직원이 있는 부서는 삭제할 수 없습니다. 소속 직원 수: " + employeeCount);
+    }
 
     departmentRepository.delete(department);
   }
@@ -105,8 +102,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         .orElseThrow(() -> new NoSuchElementException("부서를 찾을 수 없습니다: " + id));
 
     DepartmentDto departmentDto = departmentMapper.toDepartmentDto(department);
-    // 직원수 계산 로직은 EmployeeRepository 구현 후 활성화
-    // departmentDto.setEmployeeCount(employeeRepository.countByDepartmentId(id));
+    departmentDto.setEmployeeCount(employeeRepository.countByDepartmentId(id));
 
     return departmentDto;
   }
@@ -128,7 +124,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     // 커서 디코딩
     if (cursor != null && !cursor.isEmpty() && idAfter == null) {
       try {
-        String decodedCursor = new String(Base64.getDecoder().decode(cursor), StandardCharsets.UTF_8);
+        String decodedCursor = new String(Base64.getDecoder().decode(cursor),
+            StandardCharsets.UTF_8);
         if (decodedCursor.contains("\"id\":")) {
           String idStr = decodedCursor.split("\"id\":")[1].split("}")[0].trim();
           idAfter = Long.parseLong(idStr);
