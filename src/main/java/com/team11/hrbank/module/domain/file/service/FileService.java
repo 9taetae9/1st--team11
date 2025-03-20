@@ -3,6 +3,7 @@ package com.team11.hrbank.module.domain.file.service;
 import com.team11.hrbank.module.common.config.FileStorageProperties;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.file.File;
+import com.team11.hrbank.module.domain.file.exception.FileDeleteException;
 import com.team11.hrbank.module.domain.file.repository.FileRepository;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -111,9 +112,6 @@ public class FileService {
     }
   }
 
-
-
-
   /**
    * 파일 업데이트 (기존 파일 삭제 후 새 파일 업로드)
    *
@@ -180,26 +178,23 @@ public class FileService {
 
   /**
    * 파일 삭제 (DB + 물리 파일)
-   *
    * @param fileId 삭제할 파일 ID
-   * @return 삭제 성공 여부
    */
   @Transactional
-  public boolean deleteFile(Long fileId) {
+  public void deleteFile(Long fileId) {
     File fileEntity = getFileById(fileId);
-    return deleteFile(fileEntity);
+    deleteFile(fileEntity);
   }
 
   /**
    * 파일 엔티티로 파일 삭제 (DB + 물리 파일)
    *
    * @param fileEntity 삭제할 파일 엔티티
-   * @return 삭제 성공 여부
    */
   @Transactional
-  public boolean deleteFile(File fileEntity) {
+  public void deleteFile(File fileEntity) {
     if (fileEntity == null) {
-      return false;
+      throw new IllegalArgumentException("삭제 시도한 파일 엔티티가 null 입니다");
     }
 
     String filePath = fileEntity.getFilePath();
@@ -207,19 +202,20 @@ public class FileService {
     // DB에서 먼저 삭제
     try {
       fileRepository.delete(fileEntity);
-      log.info("파일 메타데이터 삭제 성고: ID={}", fileEntity.getId());
+      log.info("파일 메타데이터 삭제 성공"
+          + ": ID={}", fileEntity.getId());
     } catch (Exception e) {
       log.error("파일 메타데이터 삭제 실패: {}", e.getMessage(), e);
-      return false;
+      throw new FileDeleteException("파일 메타데이터 삭제 실패: ID=" + fileEntity.getId(), e);
     }
 
     // 물리적 파일 삭제
-    return deleteActualFile(filePath);
+    deleteActualFile(filePath);
   }
 
-  private boolean deleteActualFile(String filePath) {
+  private void deleteActualFile(String filePath) {
     if (filePath == null || filePath.trim().isEmpty()) {
-      return false;
+      throw new IllegalArgumentException("삭제할 파일 경로가 비어 있습니다.");
     }
 
     try {
@@ -227,14 +223,12 @@ public class FileService {
       if (Files.exists(path)) {
         Files.delete(path);
         log.error("파일 삭제 성공: {}", filePath);
-        return true;
       } else {
-        log.warn("삭제할 파일이 없습니다: {}", filePath);
-        return true;
+        log.warn("삭제할 파일이 존재하지 않습니다: {}", filePath);
       }
     } catch (IOException e) {
       log.error("파일 삭제 실패: {}", e.getMessage(), e);
-      return false;
+      throw new FileDeleteException("파일 삭제 중 오류가 발생했습니다: " + filePath, e);
     }
   }
 }

@@ -54,4 +54,17 @@ public class GlobalExceptionHandler {
         e.getMessage());
     return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
   }
+
+  @ExceptionHandler(FileDeleteException.class)
+  public ResponseEntity<ErrorResponse> handleFileDeleteException(FileDeleteException e) {
+    log.error("파일 삭제 실패 예외: {}", e.getMessage(), e);
+
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "파일 삭제 실패",
+        e.getMessage()
+    );
+
+    return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }

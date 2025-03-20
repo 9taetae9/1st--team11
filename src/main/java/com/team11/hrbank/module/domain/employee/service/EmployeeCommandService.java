@@ -17,6 +17,7 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.file.File;
+import com.team11.hrbank.module.domain.file.exception.FileDeleteException;
 import com.team11.hrbank.module.domain.file.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -239,14 +240,12 @@ public class EmployeeCommandService {
     // 프로필 이미지가 존재하는 경우 처리
     if (employee.getProfileImage() != null && employee.getProfileImage().getId() != null) {
       try {
-        boolean deleted = fileService.deleteFile(employee.getProfileImage());
-        if (deleted) {
-          log.info("직원 프로필 이미지 삭제 성공: {}", employee.getProfileImage().getFileName());
-        } else {
-          log.warn("직원 프로필 이미지 삭제 실패: {}", employee.getProfileImage().getFileName());
-        }
-      } catch (Exception e) {
+        fileService.deleteFile(employee.getProfileImage());
+        log.info("직원 프로필 이미지 삭제 성공: {}", employee.getProfileImage().getFileName());
+      } catch (FileDeleteException e) {
         log.error("프로필 이미지 삭제 중 오류 발생: {}", e.getMessage());
+      } catch (Exception e) {
+        log.error("프로필 이미지 삭제 중 예상치 못한 오류 발생: {}", e.getMessage(), e);
       }
     }
 
