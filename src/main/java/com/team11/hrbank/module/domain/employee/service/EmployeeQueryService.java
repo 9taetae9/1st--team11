@@ -5,7 +5,6 @@ import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
-import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
@@ -16,8 +15,8 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -81,13 +80,11 @@ public class EmployeeQueryService {
         sortField,
         sortDirection);
 
-    boolean hasNext = false;
     Long lastId = null;
 
     if (employees.size() > size) {
       // size + 1로 조회했기 때문에, 마지막 직원은 실제 목록에 포함되지 않는다.
       employees.remove(employees.size() - 1);  // 마지막 직원 제거
-      hasNext = true;
     }
 
     if (!employees.isEmpty()) {
@@ -129,9 +126,9 @@ public class EmployeeQueryService {
     return switch (periodType.toLowerCase()){
       case "day" -> getDailyStats(from, to);
       case "week" -> getWeeklyStats(from, to);
-      case "month" -> getQuarterlyStats(from, to);
+      case "month" -> getMonthlyStats(from, to);
       case "quarter" -> getQuarterlyStats(from, to);
-      case "yaer" -> getYearlyStats(from, to);
+      case "year" -> getYearlyStats(from, to);
       default -> throw new IllegalArgumentException("올바르지 않은 시간 단위입니다:" + periodType);
     };
   }
@@ -155,7 +152,13 @@ public class EmployeeQueryService {
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      dailyStats.add(new EmployeeTrendDto(current.toString(), currentCount, change, Math.round(changeRate * 100) / 100.0));
+      String formattedDate = current.format(DateTimeFormatter.ISO_LOCAL_DATE);
+      formattedDate = safeDateFormat(formattedDate, current.getYear() + "-" +
+          String.format("%02d", current.getMonthValue()) + "-" +
+          String.format("%02d", current.getDayOfMonth()));
+
+      dailyStats.add(new EmployeeTrendDto(formattedDate, currentCount, change,
+          Math.round(changeRate * 100) / 100.0));
 
       current = nextDay;
     }
@@ -187,9 +190,15 @@ public class EmployeeQueryService {
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
+      // 차트가 인식할 수 있는 ISO 날짜 형식 사용 (주 시작일)
+      String isoDate = current.format(DateTimeFormatter.ISO_LOCAL_DATE); // YYYY-MM-DD 형식
+
       weeklyStats.add(new EmployeeTrendDto(
-          current.getYear() + "-W" + current.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
-          currentCount, change,  Math.round(changeRate * 100) / 100.0));
+          isoDate, // ISO 날짜 사용 (차트가 인식 가능)
+          currentCount,
+          change,
+          Math.round(changeRate * 100) / 100.0
+      ));
 
       current = endOfWeek;
     }
@@ -221,10 +230,11 @@ public class EmployeeQueryService {
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      monthlyStats.add(new EmployeeTrendDto(
-          current.getYear() + "." + String.format("%02d", current.getMonthValue()),
-          currentCount,
-          change,
+      String formattedDate = current.getYear() + "." + String.format("%02d", current.getMonthValue());
+      formattedDate = safeDateFormat(formattedDate, current.getYear() + "." +
+          String.format("%02d", current.getMonthValue()));
+
+      monthlyStats.add(new EmployeeTrendDto(formattedDate, currentCount, change,
           Math.round(changeRate * 100) / 100.0));
 
       current = nextMonth;
@@ -258,12 +268,14 @@ public class EmployeeQueryService {
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      int quarter = (current.getMonthValue() - 1) / 3 + 1;
+      String isoDate = current.format(DateTimeFormatter.ISO_LOCAL_DATE); // YYYY-MM-DD 형식
+
       quarterlyStats.add(new EmployeeTrendDto(
-          current.getYear() + "-Q" + quarter,
+          isoDate, // ISO 날짜 사용 (차트가 인식 가능)
           currentCount,
           change,
-          Math.round(changeRate * 100) / 100.0));
+          Math.round(changeRate * 100) / 100.0
+      ));
 
       current = nextQuarter;
     }
@@ -294,12 +306,12 @@ public class EmployeeQueryService {
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      yearlyStats.add(new EmployeeTrendDto(
-          String.valueOf(current.getYear()),
-          currentCount,
-          change,
-          Math.round(changeRate * 100) / 100.0));
+      // 연도별 통계 메서드의 반환 부분
+      String formattedDate = String.valueOf(current.getYear());
+      formattedDate = safeDateFormat(formattedDate, String.valueOf(current.getYear()));
 
+      yearlyStats.add(new EmployeeTrendDto(formattedDate, currentCount, change,
+          Math.round(changeRate * 100) / 100.0));
       current = nextYear;
     }
 
@@ -310,6 +322,13 @@ public class EmployeeQueryService {
   // 직원 수 조회
   public long getEmployeeCount(EmployeeStatus status, Instant fromDate, Instant toDate) {
     return employeeRepositoryCustom.countByStatusAndHireDateBetween(status, fromDate, toDate);
+  }
+
+  private String safeDateFormat(String dateStr, String defaultValue) {
+    if (dateStr == null || dateStr.contains("NaN")) {
+      return defaultValue;
+    }
+    return dateStr;
   }
 
 }
