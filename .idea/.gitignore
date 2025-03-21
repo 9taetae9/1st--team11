@@ -32,7 +32,6 @@ replay_pid*
 /dataSources/
 /dataSources.local.xml
 
-HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -49,7 +48,6 @@ out/
 !**/src/test/**/out/
 
 ### Eclipse ###
-### STS ###
 .apt_generated
 .classpath
 .factorypath
@@ -60,15 +58,6 @@ out/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -84,8 +73,6 @@ out/
 .DS_Store
 
 ### Storage ###
-/storage/
+./storage
 
-### yaml ###
-
-/src/main/resources/application-local.yaml
+**/application.yaml

@@ -1,0 +1,22 @@
+﻿## EMPLOYEES ##
+ID,이름,이메일,사원번호,부서,직위,입사일,상태,생성일
+1,dddd,222@gmail.com,EMP-2025-73149231776810,부서명수정,dddd,2025-03-11,RESIGNED,2025-03-19T10:29:58.227058Z
+2,ㅇㅇㅇㅇㅇㅇ,ㅇ@gmail.com,EMP-2025-73691828695002,부서명수정,ddddddddd,2025-03-17,RESIGNED,2025-03-19T11:43:29.954877Z
+4,ddddd,ddd@g.com,EMP-2025-73215113962957,ddddddd,ddd,2025-03-18,ACTIVE,2025-03-20T00:38:35.434444Z
+5,dd,ddd@g.comdddd,EMP-2025-73467730085680,ddddddd,ddd@g.com,2025-03-08,ACTIVE,2025-03-20T00:38:50.117733Z
+6,ddd@g.comd,ddddddd@g.com,EMP-2025-73296448261767,ddddddd,ddddd,2025-03-06,ACTIVE,2025-03-20T00:39:01.006199Z
+7,dddd,dddddd@g.comdddd,EMP-2025-73149999160626,ddddddd,dddddddddd,2025-03-06,ACTIVE,2025-03-20T00:39:13.706635Z
+8,a,dddddddddddddd@g.com,EMP-2025-73007088362157,ddddddd,dddddd,2025-03-08,ACTIVE,2025-03-20T00:39:22.062541Z
+9,ddsssssdsds,sdddddddddddddd@g.com,EMP-2025-73678298557317,ddddddd,sdddddddddd,2025-03-18,ACTIVE,2025-03-20T00:39:34.407280Z
+10,sddddddddddddddddd,sdddddddddddddddddd@g.com,EMP-2025-73709099106399,ddddddd,fffffffffffffffddd@g.com,2025-03-17,ACTIVE,2025-03-20T00:39:42.986320Z
+11,dsssssssssssssssss,sddddddddddddddddddddddd@g.com,EMP-2025-73100946463912,ddddddd,dsssssssssssssssssddd@g.com,2025-03-17,ACTIVE,2025-03-20T00:39:55.138970Z
+12,ㅁㅁㅁㅁㅁㅁㅁㅁㅁ,ㅁㅁㅁ@ㅎㅇㄴ.채ㅜ,EMP-2025-73477654717554,ddddddd,ㅁㅁㅁ,2025-03-12,ACTIVE,2025-03-20T00:47:20.042625Z
+3,33,3@gmaail.com,EMP-2025-73650880727465,ㄷㅁㅁㅁㅁ,dddd,2025-03-18,RESIGNED,2025-03-20T00:35:20.301796Z
+13,ㅇ,ㅇ@ㅇ.채ㅡ,EMP-2025-73868752674929,부서명수정,ㅇㅇㅇㅇㅇㅇ,2025-03-18,ACTIVE,2025-03-20T03:02:42.778978Z
+14,ㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁ,ㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁ@ㅇ.채ㅡ,EMP-2025-73378390494149,부서명수정,ㅇㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴ,2025-03-11,ACTIVE,2025-03-20T03:03:03.745116Z
+## DEPARTMENTS ##
+ID,부서명,설명,설립일,생성일
+1,ddddddd,ddd,2025-03-11,2025-03-19T10:12:41.028957Z
+2,부서명수정,부서명 수정 날짜 20으로 수정,2025-03-20,2025-03-19T10:12:56.829232Z
+4,ㄷㅁㅁㅁㅁ,ㄴㅇㄹㄴㅇㄹㄴ,2025-03-12,2025-03-20T00:34:16.418523Z
+5,ㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁ,ㅁㅁㅁ,2025-03-24,2025-03-20T00:46:18.247047Z
