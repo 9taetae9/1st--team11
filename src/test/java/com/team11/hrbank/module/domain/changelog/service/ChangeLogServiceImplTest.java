@@ -8,13 +8,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
 import com.team11.hrbank.module.domain.changelog.ChangeLogDiff;
 import com.team11.hrbank.module.domain.changelog.DiffEntry;
 import com.team11.hrbank.module.domain.changelog.HistoryType;
 import com.team11.hrbank.module.domain.changelog.dto.ChangeLogDto;
-import com.team11.hrbank.module.domain.changelog.dto.CursorPageResponseChangeLogDto;
 import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 import com.team11.hrbank.module.domain.changelog.mapper.ChangeLogMapper;
 import com.team11.hrbank.module.domain.changelog.mapper.DiffMapper;
@@ -162,7 +162,7 @@ class ChangeLogServiceImplTest {
     when(changeLogMapper.toDtoList(changeLogs)).thenReturn(changeLogDtos);
 
     // when
-    CursorPageResponseChangeLogDto result = changeLogService.getAllChangeLogs(
+    CursorPageResponse<ChangeLogDto> result = changeLogService.getAllChangeLogs(
         employeeNumber, type, memo, ipAddress, atFrom, atTo,
         idAfter, cursor, size, sortField, sortDirection);
 
@@ -305,7 +305,7 @@ class ChangeLogServiceImplTest {
         .thenReturn(List.of(changeLogDtos.get(1)));
 
     // when
-    CursorPageResponseChangeLogDto result = changeLogService.getAllChangeLogs(employeeNumber, type, memo, ipAddress, atFrom, atTo,
+    CursorPageResponse<ChangeLogDto> result = changeLogService.getAllChangeLogs(employeeNumber, type, memo, ipAddress, atFrom, atTo,
         null, cursor, size, sortField, sortDirection);
 
     // then

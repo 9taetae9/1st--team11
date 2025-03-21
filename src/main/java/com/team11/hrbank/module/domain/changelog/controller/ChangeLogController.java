@@ -1,7 +1,8 @@
 package com.team11.hrbank.module.domain.changelog.controller;
 
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.domain.changelog.HistoryType;
-import com.team11.hrbank.module.domain.changelog.dto.CursorPageResponseChangeLogDto;
+import com.team11.hrbank.module.domain.changelog.dto.ChangeLogDto;
 import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +29,7 @@ public class ChangeLogController {
   private final ChangeLogService changeLogService;
 
   @GetMapping//직원 정보 수정 이력 목록 조회. 상세 변경 내용은 포함 x
-  public ResponseEntity<CursorPageResponseChangeLogDto> getAllChangeLogs(
+  public ResponseEntity<CursorPageResponse<ChangeLogDto>> getAllChangeLogs(
       @RequestParam(required = false) String employeeNumber,
       @RequestParam(required = false) HistoryType type,
       @RequestParam(required = false) String memo,
@@ -44,7 +45,7 @@ public class ChangeLogController {
 
     InetAddress inetAddress = ipAddress != null ? InetAddress.getByName(ipAddress) : null;
 
-      CursorPageResponseChangeLogDto response = changeLogService.getAllChangeLogs(
+      CursorPageResponse<ChangeLogDto> response = changeLogService.getAllChangeLogs(
           employeeNumber,
           type, memo, inetAddress, atFrom, atTo,
           idAfter, cursor, size, sortField, sortDirection);

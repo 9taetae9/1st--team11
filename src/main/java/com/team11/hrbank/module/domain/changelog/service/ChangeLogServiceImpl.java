@@ -1,9 +1,10 @@
 package com.team11.hrbank.module.domain.changelog.service;
 
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
 import com.team11.hrbank.module.domain.changelog.HistoryType;
-import com.team11.hrbank.module.domain.changelog.dto.CursorPageResponseChangeLogDto;
+import com.team11.hrbank.module.domain.changelog.dto.ChangeLogDto;
 import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 import com.team11.hrbank.module.domain.changelog.mapper.ChangeLogMapper;
 import com.team11.hrbank.module.domain.changelog.mapper.DiffMapper;
@@ -33,7 +34,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
   private final DiffMapper diffMapper;
 
 
-  public CursorPageResponseChangeLogDto getAllChangeLogs(String employeeNumber, HistoryType type, String memo, InetAddress ipAddress, Instant atFrom, Instant atTo, Long idAfter,
+  public CursorPageResponse<ChangeLogDto> getAllChangeLogs(String employeeNumber, HistoryType type, String memo, InetAddress ipAddress, Instant atFrom, Instant atTo, Long idAfter,
       String cursor, int size, String sortField, String sortDirection) {
 
     //커서 디코딩
@@ -56,7 +57,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
     //페이징 및 정렬 설정
     PageRequest pageRequest = PageRequest.of(0, size, Sort.by(direction, dbField));
 
-    // Specification을 사용
+    // Specification 사용
     Specification<ChangeLog> spec = ChangeLogSpecification.withFilters(
         employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter);
 
@@ -64,25 +65,16 @@ public class ChangeLogServiceImpl implements ChangeLogService{
 
     // 응답 생성
     List<ChangeLog> content = page.getContent();
-    boolean hasNext = page.hasNext();
-    long totalElements = page.getTotalElements();
+    List<ChangeLogDto> dtoList = changeLogMapper.toDtoList(content);
 
-    // 다음 커서 생성
-    String nextCursor = null;
-    Long nextIdAfter = null;
-    if (!content.isEmpty() && hasNext) {
-      ChangeLog lastItem = content.get(content.size() - 1);
-      nextIdAfter = lastItem.getId();
-      nextCursor = Base64.getEncoder().encodeToString(("{\"id\":" + nextIdAfter + "}").getBytes());
-    }
+    // 마지막 요소 ID 추출
+    Long lastId = !content.isEmpty() ? content.get(content.size() - 1).getId() : null;
 
-    return new CursorPageResponseChangeLogDto(
-        changeLogMapper.toDtoList(content),
-        nextCursor,
-        nextIdAfter,
+    return CursorPageResponse.of(
+        dtoList,
+        lastId,
         size,
-        totalElements,
-        hasNext
+        page.getTotalElements()
     );
   }
 

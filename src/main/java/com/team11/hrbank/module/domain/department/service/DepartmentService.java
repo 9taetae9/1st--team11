@@ -1,6 +1,6 @@
 package com.team11.hrbank.module.domain.department.service;
 
-import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
@@ -23,7 +23,7 @@ public interface DepartmentService {
 
 
   //부서 전체 조회 및 페이지네이션
-  CursorPageResponseDepartmentDto getAllDepartments(
+  CursorPageResponse<DepartmentDto> getAllDepartments(
       String nameOrDescription,
       Long idAfter,
       String cursor,

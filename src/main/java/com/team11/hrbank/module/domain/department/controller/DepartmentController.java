@@ -1,6 +1,6 @@
 package com.team11.hrbank.module.domain.department.controller;
 
-import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
@@ -53,7 +53,7 @@ public class DepartmentController {
   }
 
   @GetMapping
-  public ResponseEntity<CursorPageResponseDepartmentDto> getAllDepartments(
+  public ResponseEntity<CursorPageResponse<DepartmentDto>> getAllDepartments(
       @RequestParam(required = false) String nameOrDescription,
       @RequestParam(required = false) Long idAfter,
       @RequestParam(required = false) String cursor,
@@ -61,7 +61,7 @@ public class DepartmentController {
       @RequestParam(required = false, defaultValue = "establishedDate") String sortField,
       @RequestParam(required = false, defaultValue = "asc") String sortDirection) {
 
-    CursorPageResponseDepartmentDto result = departmentService.getAllDepartments(
+    CursorPageResponse<DepartmentDto> result = departmentService.getAllDepartments(
         nameOrDescription, idAfter, cursor, size, sortField, sortDirection);
 
     return ResponseEntity.ok(result);

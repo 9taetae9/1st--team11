@@ -23,8 +23,7 @@ public record CursorPageResponse<T>(
    * //리턴시 사용 예시
    * return CursorPageResponse.of(dtoList, lastId, size, page.getTotalElements());
    */
-  public static <T> CursorPageResponse<T> of(List<T> content, Long lastId, int size,
-      long totalElements) {
+  public static <T> CursorPageResponse<T> of(List<T> content, Long lastId, int size, long totalElements) {
     boolean hasNext =
         !content.isEmpty() && content.size() == size && totalElements > content.size();
     String nextCursor = hasNext ?
