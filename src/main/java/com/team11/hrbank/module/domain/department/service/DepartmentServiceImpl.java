@@ -1,8 +1,8 @@
 package com.team11.hrbank.module.domain.department.service;
 
+import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.department.Department;
-import com.team11.hrbank.module.domain.department.dto.CursorPageResponseDepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
@@ -10,10 +10,9 @@ import com.team11.hrbank.module.domain.department.mapper.DepartmentMapper;
 import com.team11.hrbank.module.domain.department.repository.DepartmentRepository;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import jakarta.validation.Valid;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -40,9 +39,9 @@ public class DepartmentServiceImpl implements DepartmentService {
   @Transactional
   public DepartmentDto createDepartment(DepartmentCreateRequest request) {
     // 이름 중복 검사
-    if (departmentRepository.existsByName(request.getName())) {
+    if (departmentRepository.existsByName(request.name())) {
       throw new IllegalArgumentException(
-          "Department already exists with name: " + request.getName());
+          "Department already exists with name: " + request.name());
     }
 
     Department department = departmentMapper.toDepartment(request);
@@ -64,17 +63,18 @@ public class DepartmentServiceImpl implements DepartmentService {
     Department department = departmentRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("Department not found: " + id));
 
-    if (request.getName() != null && !request.getName().equals(department.getName())) {
-      if (departmentRepository.existsByName(request.getName())) {
+    if (request.name() != null && !request.name().equals(department.getName())) {
+      if (departmentRepository.existsByName(request.name())) {
         throw new IllegalArgumentException(
-            "Department already exists with name: " + request.getName());
+            "Department already exists with name: " + request.name());
       }
     }
 
     department = departmentMapper.updateDepartmentFromRequest(department, request);
-
     Department updatedDepartment = departmentRepository.save(department);
-    return departmentMapper.toDepartmentDto(updatedDepartment);
+
+    Long employeeCount = employeeRepository.countByDepartmentId(department.getId());
+    return departmentMapper.toDepartmentDtoWithEmployeeCount(updatedDepartment, employeeCount);
   }
 
   /*
@@ -101,10 +101,9 @@ public class DepartmentServiceImpl implements DepartmentService {
     Department department = departmentRepository.findById(id)
         .orElseThrow(() -> ResourceNotFoundException.of("Department", "id", id));
 
-    DepartmentDto departmentDto = departmentMapper.toDepartmentDto(department);
-    departmentDto.setEmployeeCount(employeeRepository.countByDepartmentId(id));
-
-    return departmentDto;
+    //직원 수 카운트 + dto 생성
+    long employeeCount = employeeRepository.countByDepartmentId(id);
+    return departmentMapper.toDepartmentDtoWithEmployeeCount(department, employeeCount);
   }
 
 
@@ -113,7 +112,7 @@ public class DepartmentServiceImpl implements DepartmentService {
    * */
   @Override
   @Transactional(readOnly = true)
-  public CursorPageResponseDepartmentDto getAllDepartments(
+  public CursorPageResponse<DepartmentDto> getAllDepartments(
       String nameOrDescription,
       Long idAfter,
       String cursor,
@@ -123,16 +122,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     // 커서 디코딩
     if (cursor != null && !cursor.isEmpty() && idAfter == null) {
-      try {
-        String decodedCursor = new String(Base64.getDecoder().decode(cursor),
-            StandardCharsets.UTF_8);
-        if (decodedCursor.contains("\"id\":")) {
-          String idStr = decodedCursor.split("\"id\":")[1].split("}")[0].trim();
-          idAfter = Long.parseLong(idStr);
-        }
-      } catch (Exception e) {
-        throw new IllegalArgumentException("유효하지 않은 커서 형식입니다");
-      }
+      idAfter = CursorPageResponse.extractIdFromCursor(cursor);
     }
 
     // 기본값 설정
@@ -180,34 +170,25 @@ public class DepartmentServiceImpl implements DepartmentService {
       }
     }
 
-    // 엔티티를 DTO로 변환
+    Map<Long, Long> departmentEmployeeCounts = employeeRepository.countEmployeesByDepartmentIds(
+        departmentPage.getContent().stream()
+            .map(Department::getId)
+            .collect(Collectors.toList()));
+
     List<DepartmentDto> departmentDtos = departmentPage.getContent().stream()
         .map(department -> {
-          DepartmentDto dto = departmentMapper.toDepartmentDto(department);
-          // 직원 수는 EmployeeRepository가 구현되면 활성화
-          // dto.setEmployeeCount(employeeRepository.countByDepartmentId(department.getId()));
-          return dto;
-        })
-        .collect(Collectors.toList());
+          Long employeeCount = departmentEmployeeCounts.getOrDefault(department.getId(), 0L);
+          return departmentMapper.toDepartmentDtoWithEmployeeCount(department, employeeCount);
+        }).collect(Collectors.toList());
 
-    // 응답 생성
-    CursorPageResponseDepartmentDto response = new CursorPageResponseDepartmentDto();
-    response.setContent(departmentDtos);
-    response.setSize(size);
-    response.setTotalElements(departmentPage.getTotalElements());
-    response.setHasNext(departmentPage.hasNext());
+    // 마지막 요소의 ID 추출
+    Long lastId = !departmentDtos.isEmpty() ? departmentDtos.get(departmentDtos.size() - 1).id() : null;
 
-    // 더 많은 페이지가 있는 경우 커서 정보 설정
-    if (!departmentDtos.isEmpty() && departmentPage.hasNext()) {
-      Long lastId = departmentDtos.get(departmentDtos.size() - 1).getId();
-      response.setNextIdAfter(lastId);
-
-      // 커서 인코딩
-      String nextCursor = Base64.getEncoder().encodeToString(
-          String.format("{\"id\":%d}", lastId).getBytes(StandardCharsets.UTF_8));
-      response.setNextCursor(nextCursor);
-    }
-
-    return response;
+    return CursorPageResponse.of(
+        departmentDtos,
+        lastId,
+        size,
+        departmentPage.getTotalElements()
+    );
   }
 }

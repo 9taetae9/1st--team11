@@ -4,79 +4,24 @@ import com.team11.hrbank.module.domain.department.Department;
 import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
-import jakarta.validation.Valid;
-import java.time.ZoneOffset;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 
-@Component
-public class DepartmentMapper {
+@Mapper(componentModel = "spring")
+public interface DepartmentMapper {
 
-  // 부서 생성 요청 DTO -> 부서 엔티티 변환
-  public Department toDepartment(DepartmentCreateRequest departmentCreateRequest) {
-    if (departmentCreateRequest == null) {
-      return null;
-    }
+  Department toDepartment(DepartmentCreateRequest request);
 
-    Department department = new Department();
-    department.setName(departmentCreateRequest.getName());
-    department.setDescription(departmentCreateRequest.getDescription());
+  // 엔티티를 DTO로 변환 (employeeCount는 별도로 처리)
+  @Mapping(target = "employeeCount", ignore = true)
+  DepartmentDto toDepartmentDto(Department department);
 
-    // LocalDate → Instant 변환 (UTC 기준)
-    if (departmentCreateRequest.getEstablishedDate() != null) {
-      department.setEstablishedDate(
-          departmentCreateRequest.getEstablishedDate().atStartOfDay().toInstant(ZoneOffset.UTC)
-      );
-    }
+  // DTO로 변환하면서 employeeCount 설정 (수동으로 호출할 메서드)
+  @Mapping(target = "employeeCount", source = "employeeCount")
+  DepartmentDto toDepartmentDtoWithEmployeeCount(Department department, Long employeeCount);
 
-    return department;
-  }
-
-  // 부서 엔티티 -> 부서 DTO 변환
-  public DepartmentDto toDepartmentDto(Department department) {
-    if (department == null) {
-      return null;
-    }
-
-    DepartmentDto departmentDto = new DepartmentDto();
-    departmentDto.setId(department.getId());
-    departmentDto.setName(department.getName());
-    departmentDto.setDescription(department.getDescription());
-
-    // Instant → LocalDate 변환 (UTC 기준)
-    if (department.getEstablishedDate() != null) {
-      departmentDto.setEstablishedDate(
-          department.getEstablishedDate().atZone(ZoneOffset.UTC).toLocalDate()
-      );
-    }
-
-    // 직원 수 초기값을 0으로 설정
-    departmentDto.setEmployeeCount(0L);
-
-    return departmentDto;
-  }
-
-  // 부서 업데이트 요청 DTO -> 기존 부서 엔티티 업데이트
-  public Department updateDepartmentFromRequest(Department department, @Valid DepartmentUpdateRequest updateRequest) {
-    if (updateRequest == null || department == null) {
-      return department;
-    }
-
-    if (updateRequest.getName() != null) {
-      department.setName(updateRequest.getName());
-    }
-
-    if (updateRequest.getDescription() != null) {
-      department.setDescription(updateRequest.getDescription());
-    }
-
-    // LocalDate → Instant 변환 (UTC 기준)
-    if (updateRequest.getEstablishedDate() != null) {
-      department.setEstablishedDate(
-          updateRequest.getEstablishedDate().atStartOfDay().toInstant(ZoneOffset.UTC)
-      );
-    }
-
-    return department;
-  }
+  // 업데이트 요청으로 엔티티 업데이트
+  Department updateDepartmentFromRequest(@MappingTarget Department department, DepartmentUpdateRequest request);
 }

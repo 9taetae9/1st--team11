@@ -1,7 +1,6 @@
 package com.team11.hrbank.module.domain.file.service;
 
 import com.team11.hrbank.module.common.config.FileStorageProperties;
-import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.exception.FileDeleteException;
 import com.team11.hrbank.module.domain.file.exception.FileDownloadException;

@@ -2,7 +2,6 @@ package com.team11.hrbank.module.domain.employee.service;
 
 import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
-import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
@@ -12,12 +11,7 @@ import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepositoryCustom;
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +28,6 @@ public class EmployeeQueryService {
   private final EmployeeRepository employeeRepository;
   private final EmployeeRepositoryCustom employeeRepositoryCustom;
   private final EmployeeMapper employeeMapper;
-  private final ChangeLogService changeLogService;
 
   // 부서 별 직원 수
   public Long countByDepartmentId(Long departmentId) {
@@ -115,13 +108,13 @@ public class EmployeeQueryService {
   }
 
   // 직원 수 추이
-  public List<EmployeeTrendDto> getEmployeeTrend(Instant from, Instant to, String periodType) {
+  public List<EmployeeTrendDto> getEmployeeTrend(LocalDate from, LocalDate to, String periodType) {
     // 기본값 설정: from과 to가 null일 경우 최근 12개월 데이터 반환
     if (from == null) {
-      from = ZonedDateTime.now().minus(12, ChronoUnit.MONTHS).toInstant();
+      from = LocalDate.now().minusMonths(12);
     }
     if (to == null) {
-      to = Instant.now();
+      to = LocalDate.now();
     }
 
     return switch (periodType.toLowerCase()){
@@ -135,31 +128,27 @@ public class EmployeeQueryService {
   }
 
   //일별 통계 조회
-  private List<EmployeeTrendDto> getDailyStats(Instant from, Instant to) {
+  private List<EmployeeTrendDto> getDailyStats(LocalDate from, LocalDate to) {
     List<EmployeeTrendDto> dailyStats = new ArrayList<>();
-    ZonedDateTime current = ZonedDateTime.ofInstant(from, ZoneId.of("UTC"));
-    ZonedDateTime end = ZonedDateTime.ofInstant(to, ZoneId.of("UTC"));
+    LocalDate current = from;
 
-    while (current.isBefore(end) || current.isEqual(end)) {
-      ZonedDateTime nextDay = current.plusDays(1);
-      long currentCount = employeeRepository.countEmployeesByHireDateBetween(current.toInstant(),
-          nextDay.toInstant());
+    while (current.isBefore(to) || current.isEqual(to)) {
+      LocalDate nextDay = current.plusDays(1);
+      long currentCount = employeeRepository.countEmployeesByHireDateBetween(current, nextDay);
 
       // 이전 날의 데이터를 구하기 위한 코드
-      ZonedDateTime previousDay = current.minusDays(1);
-      long previousCount = employeeRepository.countEmployeesByHireDateBetween(
-          previousDay.toInstant(), current.toInstant());
+      LocalDate previousDay = current.minusDays(1);
+      long previousCount = employeeRepository.countEmployeesByHireDateBetween(previousDay, current);
 
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      String formattedDate = current.format(DateTimeFormatter.ISO_LOCAL_DATE);
-      formattedDate = safeDateFormat(formattedDate, current.getYear() + "-" +
-          String.format("%02d", current.getMonthValue()) + "-" +
-          String.format("%02d", current.getDayOfMonth()));
-
-      dailyStats.add(new EmployeeTrendDto(formattedDate, currentCount, change,
-          Math.round(changeRate * 100) / 100.0));
+      dailyStats.add(new EmployeeTrendDto(
+          current.toString(),
+          currentCount,
+          change,
+          Math.round(changeRate * 100) / 100.0
+      ));
 
       current = nextDay;
     }
@@ -168,34 +157,28 @@ public class EmployeeQueryService {
   }
 
   // 주별 데이터 처리
-  private List<EmployeeTrendDto> getWeeklyStats(Instant from, Instant to) {
+  private List<EmployeeTrendDto> getWeeklyStats(LocalDate from, LocalDate to) {
     List<EmployeeTrendDto> weeklyStats = new ArrayList<>();
-    ZonedDateTime current = ZonedDateTime.ofInstant(from, ZoneId.of("UTC"));
-    ZonedDateTime end = ZonedDateTime.ofInstant(to, ZoneId.of("UTC"));
-
+    LocalDate current = from;
     //주 시작일을 수요일로 조정(프로토타입과 일치)
     current = current.with(DayOfWeek.WEDNESDAY);
 
     // 주 시작일을 기준으로 진행
-    while (current.isBefore(end) || current.isEqual(end)) {
-      ZonedDateTime endOfWeek = current.plusWeeks(1);
+    while (current.isBefore(to) || current.isEqual(to)) {
+      LocalDate endOfWeek = current.plusWeeks(1);
 
-      long currentCount = employeeRepository.countEmployeesByHireDateBetween(
-          current.toInstant(), endOfWeek.toInstant());
+      long currentCount = employeeRepository.countEmployeesByHireDateBetween(current, endOfWeek);
 
       // 지난주 데이터
-      ZonedDateTime previousWeekStart = current.minusWeeks(1);
+      LocalDate previousWeekStart = current.minusWeeks(1);
       long previousCount = employeeRepository.countEmployeesByHireDateBetween(
-          previousWeekStart.toInstant(), current.toInstant());
+          previousWeekStart, current);
 
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      // 차트가 인식할 수 있는 ISO 날짜 형식 사용 (주 시작일)
-      String isoDate = current.format(DateTimeFormatter.ISO_LOCAL_DATE); // YYYY-MM-DD 형식
-
       weeklyStats.add(new EmployeeTrendDto(
-          isoDate, // ISO 날짜 사용 (차트가 인식 가능)
+          current.toString(),
           currentCount,
           change,
           Math.round(changeRate * 100) / 100.0
@@ -208,35 +191,29 @@ public class EmployeeQueryService {
   }
 
   // 월별 데이터 처리
-  private List<EmployeeTrendDto> getMonthlyStats(Instant from, Instant to) {
+  private List<EmployeeTrendDto> getMonthlyStats(LocalDate from, LocalDate to) {
     List<EmployeeTrendDto> monthlyStats = new ArrayList<>();
-    ZonedDateTime current = ZonedDateTime.ofInstant(from, ZoneId.of("UTC"));
-    ZonedDateTime end = ZonedDateTime.ofInstant(to, ZoneId.of("UTC"));
+    LocalDate current = from.withDayOfMonth(1);
 
-    // 월의 첫날로 조정
-    current = current.withDayOfMonth(1);
+    while (current.isBefore(to) || current.isEqual(to)) {
+      LocalDate nextMonth = current.plusMonths(1);
 
-    while (current.isBefore(end) || current.isEqual(end)) {
-      ZonedDateTime nextMonth = current.plusMonths(1);
-
-      long currentCount = employeeRepository.countEmployeesByHireDateBetween(
-          current.toInstant(), nextMonth.toInstant());
+      long currentCount = employeeRepository.countEmployeesByHireDateBetween(current, nextMonth);
 
       // 이전 월의 데이터
-      ZonedDateTime previousMonth = current.minusMonths(1);
-      long previousCount = employeeRepository.countEmployeesByHireDateBetween(
-          previousMonth.toInstant(), current.toInstant());
+      LocalDate previousMonth = current.minusMonths(1);
+      long previousCount = employeeRepository.countEmployeesByHireDateBetween(previousMonth, current);
 
       // 변화량 계산
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      String formattedDate = current.getYear() + "." + String.format("%02d", current.getMonthValue());
-      formattedDate = safeDateFormat(formattedDate, current.getYear() + "." +
-          String.format("%02d", current.getMonthValue()));
-
-      monthlyStats.add(new EmployeeTrendDto(formattedDate, currentCount, change,
-          Math.round(changeRate * 100) / 100.0));
+      monthlyStats.add(new EmployeeTrendDto(
+          current.toString(),
+          currentCount,
+          change,
+          Math.round(changeRate * 100) / 100.0
+      ));
 
       current = nextMonth;
     }
@@ -245,34 +222,29 @@ public class EmployeeQueryService {
   }
 
   // 분기별 통계 조회
-  private List<EmployeeTrendDto> getQuarterlyStats(Instant from, Instant to) {
+  private List<EmployeeTrendDto> getQuarterlyStats(LocalDate from, LocalDate to) {
     List<EmployeeTrendDto> quarterlyStats = new ArrayList<>();
-    ZonedDateTime current = ZonedDateTime.ofInstant(from, ZoneId.of("UTC"));
-    ZonedDateTime end = ZonedDateTime.ofInstant(to, ZoneId.of("UTC"));
 
     // 분기의 첫날로 조정
-    int currentQuarter = (current.getMonthValue() - 1) / 3;
-    current = current.withMonth(currentQuarter * 3 + 1).withDayOfMonth(1);
+    int currentQuarter = (from.getMonthValue() - 1) / 3;
+    LocalDate current = from.withMonth(currentQuarter * 3 + 1).withDayOfMonth(1);
 
-    while (current.isBefore(end) || current.isEqual(end)) {
-      ZonedDateTime nextQuarter = current.plusMonths(3);
+    while (current.isBefore(to) || current.isEqual(to)) {
+      LocalDate nextQuarter = current.plusMonths(3);
 
-      long currentCount = employeeRepository.countEmployeesByHireDateBetween(
-          current.toInstant(), nextQuarter.toInstant());
+      long currentCount = employeeRepository.countEmployeesByHireDateBetween(current, nextQuarter);
 
       // 이전 분기의 데이터
-      ZonedDateTime previousQuarter = current.minusMonths(3);
+      LocalDate previousQuarter = current.minusMonths(3);
       long previousCount = employeeRepository.countEmployeesByHireDateBetween(
-          previousQuarter.toInstant(), current.toInstant());
+          previousQuarter, current);
 
       // 변화량 계산
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      String isoDate = current.format(DateTimeFormatter.ISO_LOCAL_DATE); // YYYY-MM-DD 형식
-
       quarterlyStats.add(new EmployeeTrendDto(
-          isoDate, // ISO 날짜 사용 (차트가 인식 가능)
+          current.toString(),
           currentCount,
           change,
           Math.round(changeRate * 100) / 100.0
@@ -286,33 +258,29 @@ public class EmployeeQueryService {
 
 
   // 연도별 통계
-  private List<EmployeeTrendDto> getYearlyStats(Instant from, Instant to) {
+  private List<EmployeeTrendDto> getYearlyStats(LocalDate from, LocalDate to) {
     List<EmployeeTrendDto> yearlyStats = new ArrayList<>();
-    ZonedDateTime current = ZonedDateTime.ofInstant(from, ZoneId.of("UTC"));
-    ZonedDateTime end = ZonedDateTime.ofInstant(to, ZoneId.of("UTC"));
+    LocalDate current = from.withDayOfYear(1);
 
-    current = current.withDayOfYear(1);
+    while (current.isBefore(to) || current.isEqual(to)) {
+      LocalDate nextYear = current.plusYears(1);
 
-    while (current.isBefore(end) || current.isEqual(end)) {
-      ZonedDateTime nextYear = current.plusYears(1);
-
-      long currentCount = employeeRepository.countEmployeesByHireDateBetween(
-          current.toInstant(), nextYear.toInstant());
+      long currentCount = employeeRepository.countEmployeesByHireDateBetween(current, nextYear);
 
       // 전년도 데이터
-      ZonedDateTime previousYear = current.minusYears(1);
-      long previousCount = employeeRepository.countEmployeesByHireDateBetween(
-          previousYear.toInstant(), current.toInstant());
+      LocalDate previousYear = current.minusYears(1);
+      long previousCount = employeeRepository.countEmployeesByHireDateBetween(previousYear, current);
 
       long change = currentCount - previousCount;
       double changeRate = previousCount > 0 ? (double) change / previousCount * 100 : 0.0;
 
-      // 연도별 통계 메서드의 반환 부분
-      String formattedDate = String.valueOf(current.getYear());
-      formattedDate = safeDateFormat(formattedDate, String.valueOf(current.getYear()));
+      yearlyStats.add(new EmployeeTrendDto(
+          current.toString(),
+          currentCount,
+          change,
+          Math.round(changeRate * 100) / 100.0
+      ));
 
-      yearlyStats.add(new EmployeeTrendDto(formattedDate, currentCount, change,
-          Math.round(changeRate * 100) / 100.0));
       current = nextYear;
     }
 
@@ -323,13 +291,6 @@ public class EmployeeQueryService {
   // 직원 수 조회
   public long getEmployeeCount(EmployeeStatus status, LocalDate fromDate, LocalDate toDate) {
     return employeeRepositoryCustom.countByStatusAndHireDateBetween(status, fromDate, toDate);
-  }
-
-  private String safeDateFormat(String dateStr, String defaultValue) {
-    if (dateStr == null || dateStr.contains("NaN")) {
-      return defaultValue;
-    }
-    return dateStr;
   }
 
 }

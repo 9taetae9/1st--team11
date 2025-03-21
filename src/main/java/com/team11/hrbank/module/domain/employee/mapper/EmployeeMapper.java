@@ -2,12 +2,8 @@ package com.team11.hrbank.module.domain.employee.mapper;
 
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {

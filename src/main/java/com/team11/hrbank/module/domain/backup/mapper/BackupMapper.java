@@ -4,7 +4,6 @@ import com.team11.hrbank.module.domain.backup.BackupHistory;
 import com.team11.hrbank.module.domain.backup.dto.BackupDto;
 import com.team11.hrbank.module.domain.file.File;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
