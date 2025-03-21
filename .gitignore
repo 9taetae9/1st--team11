@@ -84,6 +84,8 @@ out/
 .DS_Store
 
 ### Storage ###
-./storage
-/src/main/resources/application.yaml
-/src/main/resources/schema.sql
+/storage/
+
+### yaml ###
+
+/src/main/resources/application-local.yaml
