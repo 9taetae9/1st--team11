@@ -114,22 +114,14 @@ public class EmployeeController {
   ) {
     log.info("직원 목록 조회: nameOrEmail={}, sortField={}, sortDirection={}", nameOrEmail, sortField, sortDirection);
 
-    Instant hireDateFromInstant = (hireDateFrom != null)
-        ? hireDateFrom.atStartOfDay(ZoneId.of("UTC")).toInstant()
-        : null;
-
-    Instant hireDateToInstant = (hireDateTo != null)
-        ? hireDateTo.atStartOfDay(ZoneId.of("UTC")).toInstant()
-        : null;
-
 
     return ResponseEntity.ok(employeeQueryService.getListEmployees(
         nameOrEmail,
         employeeNumber,
         departmentName,
         position,
-        hireDateFromInstant,
-        hireDateToInstant,
+        hireDateFrom,
+        hireDateTo,
         status,
         idAfter,
         cursor,
@@ -173,16 +165,9 @@ public class EmployeeController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
     log.info("직원 수 조회: status={}, fromDate={}, toDate={}", status, fromDate, toDate);
 
-    Instant fromDateInstant = (fromDate != null)
-        ? fromDate.atStartOfDay(ZoneId.of("UTC")).toInstant()
-        : null;
-
-    Instant toDateInstant = (toDate != null)
-        ? toDate.atStartOfDay(ZoneId.of("UTC")).toInstant()
-        : null;
 
     return ResponseEntity.ok(
-        employeeQueryService.getEmployeeCount(status, fromDateInstant, toDateInstant));
+        employeeQueryService.getEmployeeCount(status, fromDate, toDate));
   }
 
 

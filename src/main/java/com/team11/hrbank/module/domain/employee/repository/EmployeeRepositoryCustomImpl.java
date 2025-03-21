@@ -10,7 +10,7 @@ import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.QEmployee;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Repository;
@@ -27,7 +27,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
   // 직원 목록 조회
   @Override
   public List<Employee> findEmployeesByConditions(String nameOrEmail, String employeeNumber,
-      String departmentName, String position, Instant hireDateFrom, Instant hireDateTo,
+      String departmentName, String position, LocalDate hireDateFrom, LocalDate hireDateTo,
       EmployeeStatus status, Long idAfter, String cursor, int size, String sortField,
       String sortDirection) {
     BooleanBuilder builder = new BooleanBuilder();
@@ -94,7 +94,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
               isAsc ? employee.employeeNumber.gt(cursor) : employee.employeeNumber.lt(cursor);
           break;
         case "hireDate":
-          Instant hireDate = Instant.parse(cursor);
+          LocalDate hireDate = LocalDate.parse(cursor);
           cursorCondition = isAsc ? employee.hireDate.gt(hireDate) : employee.hireDate.lt(hireDate);
           break;
         default:
@@ -123,7 +123,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
               : employee.employeeNumber.lt(targetEmployee.getEmployeeNumber());
           break;
         case "hireDate":
-          Instant hireDate = targetEmployee.getHireDate();
+          LocalDate hireDate = targetEmployee.getHireDate();
           cursorCondition =
               isAsc ? employee.hireDate.gt(hireDate) : employee.hireDate.lt(hireDate);
           break;
@@ -200,8 +200,8 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
 
   // 직원 수 조회
   @Override
-  public long countByStatusAndHireDateBetween(EmployeeStatus status, Instant fromData,
-      Instant toDate) {
+  public long countByStatusAndHireDateBetween(EmployeeStatus status, LocalDate fromData,
+      LocalDate toDate) {
 
     QEmployee employee = QEmployee.employee;
 

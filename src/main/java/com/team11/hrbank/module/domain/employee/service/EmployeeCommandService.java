@@ -68,8 +68,6 @@ public class EmployeeCommandService {
         .orElseThrow(() -> ResourceNotFoundException.of("Department", "departmentId",
             employeeCreateRequest.departmentId()));
 
-    Instant hireDateInstant = employeeCreateRequest.hireDate() != null ? employeeCreateRequest.hireDate()
-        .atStartOfDay(ZoneId.of("UTC")).toInstant() : null;
     // 직원 생성
     Employee employee = Employee.builder()
         .name(employeeCreateRequest.name())
@@ -77,7 +75,7 @@ public class EmployeeCommandService {
         .employeeNumber(employeeNumberGenerator.generateEmployeeNumber())
         .department(department)
         .position(employeeCreateRequest.position())
-        .hireDate(hireDateInstant)
+        .hireDate(employeeCreateRequest.hireDate())
         .profileImage(savedProfileImage)
         .status(EmployeeStatus.ACTIVE) // 재직중 초기화 조건, 엔티티에 설정된 에노테이션은 DB 레벨에 지정된 것
         .build();
@@ -155,20 +153,17 @@ public class EmployeeCommandService {
       employee.updatePosition(employeeUpdateRequest.position());
       hasChanges = true;
     }
-    Instant hireDateInstant = employeeUpdateRequest.hireDate() != null ? employeeUpdateRequest.hireDate()
-        .atStartOfDay(ZoneId.of("UTC")).toInstant() : null;
 
-    // 입사일 변경
     if (employeeUpdateRequest.hireDate() != null && !employeeUpdateRequest.hireDate()
         .equals(employee.getHireDate())) {
       changes.add(DiffEntry.of("입사일",
           employee.getHireDate() != null ? employee.getHireDate().toString() : "",
           employeeUpdateRequest.hireDate().toString()));
-      employee.updateHireDate(hireDateInstant);
+      employee.updateHireDate(employeeUpdateRequest.hireDate());
       hasChanges = true;
     }
 
-    // 상태 변경
+      // 상태 변경
     if (employeeUpdateRequest.status() != null && !employeeUpdateRequest.status()
         .equals(employee.getStatus())) {
       changes.add(DiffEntry.of("상태",

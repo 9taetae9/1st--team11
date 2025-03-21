@@ -3,7 +3,7 @@ package com.team11.hrbank.module.domain.employee.repository;
 import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -15,8 +15,8 @@ public interface EmployeeRepositoryCustom {
       String employeeNumber,
       String departmentName,
       String position,
-      Instant hireDateFrom,
-      Instant hireDateTo,
+      LocalDate hireDateFrom,
+      LocalDate hireDateTo,
       EmployeeStatus status,
       Long idAfter,
       String cursor,
@@ -28,8 +28,8 @@ public interface EmployeeRepositoryCustom {
 
   long countByStatusAndHireDateBetween(
       EmployeeStatus status,
-      Instant fromData,
-      Instant toDate
+      LocalDate fromData,
+      LocalDate toDate
   );
 
 }

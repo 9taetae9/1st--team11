@@ -11,7 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.Instant;
+import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Getter;
 import org.hibernate.annotations.ColumnDefault;
@@ -38,7 +38,7 @@ public class Employee extends UpdatableEntity {
   private String position;
 
   @Column(name = "hire_date", nullable = false)
-  private Instant hireDate;
+  private LocalDate hireDate;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "profile_image_id")
@@ -55,7 +55,7 @@ public class Employee extends UpdatableEntity {
 
   @Builder
   public Employee(String name, String email, String employeeNumber, Department department,
-      String position, Instant hireDate, File profileImage, EmployeeStatus status) {
+      String position, LocalDate hireDate, File profileImage, EmployeeStatus status) {
     this.name = name;
     this.email = email;
     this.employeeNumber = employeeNumber;
@@ -83,7 +83,7 @@ public class Employee extends UpdatableEntity {
     this.position = position;
   }
 
-  public void updateHireDate(Instant hireDate) {
+  public void updateHireDate(LocalDate hireDate) {
     this.hireDate = hireDate;
   }
 

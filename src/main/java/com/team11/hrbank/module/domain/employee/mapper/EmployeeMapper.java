@@ -15,12 +15,7 @@ public interface EmployeeMapper {
   @Mapping(source = "department.id", target = "departmentId")
   @Mapping(source = "department.name", target = "departmentName")
   @Mapping(source = "profileImage.id", target = "profileImageId")
-  @Mapping(source = "hireDate", target = "hireDate", qualifiedByName = "instantToLocalDate")
+  @Mapping(source = "hireDate", target = "hireDate")
   EmployeeDto toDto(Employee employee);
-
-  @Named("instantToLocalDate")
-  default LocalDate instantTolLocalDate(Instant instant) {
-    return instant.atZone(ZoneId.of("UTC")).toLocalDate();
-  }
 
 }

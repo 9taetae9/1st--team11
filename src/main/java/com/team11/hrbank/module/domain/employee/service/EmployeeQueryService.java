@@ -13,6 +13,7 @@ import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepositoryCustom;
 import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,8 +54,8 @@ public class EmployeeQueryService {
       String employeeNumber,
       String departmentName,
       String position,
-      Instant hireDateFrom,
-      Instant hireDateTo,
+      LocalDate hireDateFrom,
+      LocalDate hireDateTo,
       EmployeeStatus status,
       Long idAfter,
       String cursor,
@@ -320,7 +321,7 @@ public class EmployeeQueryService {
 
 
   // 직원 수 조회
-  public long getEmployeeCount(EmployeeStatus status, Instant fromDate, Instant toDate) {
+  public long getEmployeeCount(EmployeeStatus status, LocalDate fromDate, LocalDate toDate) {
     return employeeRepositoryCustom.countByStatusAndHireDateBetween(status, fromDate, toDate);
   }
 
