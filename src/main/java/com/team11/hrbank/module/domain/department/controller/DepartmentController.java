@@ -43,7 +43,7 @@ public class DepartmentController {
   @DeleteMapping("/{id}")
   public ResponseEntity<String> deleteDepartment(@PathVariable Long id) {
     departmentService.deleteDepartment(id);
-    return ResponseEntity.ok("부서 ID: " + id + " 삭제되었습니다");
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/{id}")
