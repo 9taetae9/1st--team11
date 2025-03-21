@@ -1,6 +1,10 @@
 package com.team11.hrbank.module.common.exception;
 
 import com.team11.hrbank.module.common.dto.ErrorResponse;
+import com.team11.hrbank.module.domain.backup.exception.BackupAlreadyInProgressException;
+import com.team11.hrbank.module.domain.backup.exception.BackupFailedException;
+import com.team11.hrbank.module.domain.backup.exception.BackupFileSaveFailedException;
+import com.team11.hrbank.module.domain.file.exception.FileDeleteException;
 import java.net.UnknownHostException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -45,6 +49,38 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
   }
 
+  @ExceptionHandler(BackupAlreadyInProgressException.class)
+  public ResponseEntity<ErrorResponse> handleBackupAlreadyInProgressException(
+      BackupAlreadyInProgressException e) {
+    log.warn("이미 진행중인 백업이 존재하는 예외: {}", e.getMessage());
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.CONFLICT.value(),
+        "백업 진행 중",
+        e.getMessage());
+    return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+  }
+
+  @ExceptionHandler(BackupFailedException.class)
+  public ResponseEntity<ErrorResponse> handleBackupFailedException(
+      BackupFailedException e) {
+    log.error("백업 실패 예외: {}", e.getMessage(), e);
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "백업 실패",
+        e.getMessage());
+    return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @ExceptionHandler(BackupFileSaveFailedException.class)
+  public ResponseEntity<ErrorResponse> handleBackupFileSaveFailedException(
+      BackupFileSaveFailedException e) {
+    log.error("백업 파일 저장 예외: {}", e.getMessage(), e);
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "백업 파일 저장 실패",
+        e.getMessage());
+    return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGlobalException(Exception e) {
     log.error("Unexpected error occurred: {}", e.getMessage(), e);
