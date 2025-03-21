@@ -2,7 +2,6 @@ package com.team11.hrbank.module.domain.employee.controller;
 
 import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
-import com.team11.hrbank.module.domain.employee.dto.CursorPageResponseEmployeeDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeCreateRequest;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDto;
@@ -10,6 +9,7 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.Instant;
@@ -36,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/employees")
 @RequiredArgsConstructor
+@Tag(name = "Employee Management", description = "직원 관리 API")
 public class EmployeeController {
 
   /**

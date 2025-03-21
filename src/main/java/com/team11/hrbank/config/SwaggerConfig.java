@@ -11,11 +11,12 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
   @Bean
-  public OpenAPI openAPi() {
+  public OpenAPI openAPI() {
     return new OpenAPI()
         .info(new Info()
             .title("HR Bank API team11")
-            .description("팀11 HR Bank API 문서입니다."))
+            .description("팀11 HR Bank API 문서입니다.")
+            .version("v1.0.0"))
         .servers(List.of(new Server()
             .url("http://localhost:8080")
             .description("Local Server")));

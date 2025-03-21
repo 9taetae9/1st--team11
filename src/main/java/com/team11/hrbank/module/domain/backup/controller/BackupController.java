@@ -6,6 +6,7 @@ import com.team11.hrbank.module.domain.backup.BackupStatus;
 import com.team11.hrbank.module.domain.backup.dto.BackupDto;
 import com.team11.hrbank.module.domain.backup.mapper.BackupMapper;
 import com.team11.hrbank.module.domain.backup.service.BackupService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/backups")
 @RequiredArgsConstructor
+@Tag(name = "Backup Management", description = "백업 관리 API")
 public class BackupController {
 
     private final BackupService backupService;

@@ -5,6 +5,7 @@ import com.team11.hrbank.module.domain.department.dto.DepartmentCreateRequest;
 import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
 import com.team11.hrbank.module.domain.department.service.DepartmentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/departments")
 @RequiredArgsConstructor
+@Tag(name = "Department Management", description = "부서 관리 API")
 public class DepartmentController {
 
   private final DepartmentService departmentService;

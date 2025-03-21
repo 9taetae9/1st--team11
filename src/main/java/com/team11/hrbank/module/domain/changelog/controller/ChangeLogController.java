@@ -4,12 +4,10 @@ import com.team11.hrbank.module.domain.changelog.HistoryType;
 import com.team11.hrbank.module.domain.changelog.dto.CursorPageResponseChangeLogDto;
 import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/change-logs")
 @RequiredArgsConstructor
+@Tag(name = "Changelog Management", description = "직원 정보 변경 이력 관리 API")
 public class ChangeLogController {
 
   private final ChangeLogService changeLogService;
