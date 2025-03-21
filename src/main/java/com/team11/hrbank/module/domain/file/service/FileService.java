@@ -48,7 +48,7 @@ public class FileService {
       );
     } catch (Exception e) {
       // DB 저장 실패 시 실제 파일 삭제
-      log.error("파일 메타데이터 저장 실패 - 파일시스템 실제 파일 삭제 필요, 경로: {}", filePath, e);
+      log.error("파일 메타데이터 저장 실패 - 파일시스템 실제 파일 삭제 시작, 경로: {}", filePath, e);
       deleteActualFile(filePath);
       throw e;
     }
@@ -98,7 +98,9 @@ public class FileService {
       Path filePath = Paths.get(fileEntity.getFilePath());
 
       if (!Files.exists(filePath)) {
-        throw ResourceNotFoundException.of("File", "filePath", fileEntity.getFilePath());
+        log.warn("해당 파일이 물리적으로 존재하지 않습니다 {}", filePath);
+        return new byte[0]; //빈바이트 배열 반환 (대안: 프론트 수정해서 기본 이미지 반환)
+//        throw ResourceNotFoundException.of("File", "filePath", fileEntity.getFilePath());
       }
 
       return Files.readAllBytes(filePath);
@@ -186,7 +188,7 @@ public class FileService {
     log.info("물리적 파일 저장 시작: 파일명={}, 크기={}bytes", originalName, file.getSize());
 
     // 저장 디렉토리 확인 및 생성
-    Path rootPath = Paths.get(fileStorageProperties.getRootPath());
+    Path rootPath = Paths.get(fileStorageProperties.getProfileImages());
     checkDirectoryExists(rootPath);
 
     // 고유 파일명 생성
