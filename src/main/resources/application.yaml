@@ -7,19 +7,19 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
 
-jpa:
-  hibernate:
-    ddl-auto: validate
-  properties:
+  jpa:
     hibernate:
-      dialect: org.hibernate.dialect.PostgreSQLDialect
-      format_sql: true
-  show-sql: true
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
 
-sql:
-  init:
-    mode: never
-    schema-locations: classpath:schema.sql
+  sql:
+    init:
+      mode: never
+      schema-locations: classpath:schema.sql
 
 file:
   storage:

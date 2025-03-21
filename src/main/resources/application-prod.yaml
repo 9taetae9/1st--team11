@@ -4,8 +4,8 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
-jpa:
-  show-sql: false
+  jpa:
+    show-sql: false
 
 logging:
   level:
