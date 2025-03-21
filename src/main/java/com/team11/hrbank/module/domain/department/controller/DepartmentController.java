@@ -6,6 +6,7 @@ import com.team11.hrbank.module.domain.department.dto.DepartmentDto;
 import com.team11.hrbank.module.domain.department.dto.DepartmentUpdateRequest;
 import com.team11.hrbank.module.domain.department.service.DepartmentService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/departments")
+@RequiredArgsConstructor
 public class DepartmentController {
 
   private final DepartmentService departmentService;
-
-  public DepartmentController(DepartmentService departmentService) {
-    this.departmentService = departmentService;
-  }
 
   @PostMapping
   public ResponseEntity<DepartmentDto> createDepartment(@RequestBody @Valid DepartmentCreateRequest request) {

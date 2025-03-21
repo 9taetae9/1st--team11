@@ -99,7 +99,7 @@ public class DepartmentServiceImpl implements DepartmentService {
   @Override
   public DepartmentDto getDepartmentById(Long id) {
     Department department = departmentRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("부서를 찾을 수 없습니다: " + id));
+        .orElseThrow(() -> ResourceNotFoundException.of("Department", "id", id));
 
     DepartmentDto departmentDto = departmentMapper.toDepartmentDto(department);
     departmentDto.setEmployeeCount(employeeRepository.countByDepartmentId(id));
