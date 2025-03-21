@@ -101,8 +101,6 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
           throw new IllegalArgumentException("sortField(" + sortField + ")는 존재하지 않습니다.");
       }
     } else if (idAfter != null) {
-      // idAfte 만 전달받을 경우 idAfter를 id 로 가진 employee를 찾아서, sortField 에 따라서 비교한다.
-      // idAfter로 해당 Employee 객체를 조회
       Employee targetEmployee = queryFactory.selectFrom(employee)
           .where(employee.id.eq(idAfter))
           .fetchOne();

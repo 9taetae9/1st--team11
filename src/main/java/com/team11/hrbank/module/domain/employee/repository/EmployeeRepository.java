@@ -20,7 +20,4 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
 
   long countByDepartmentId(Long departmentId);
-
-  @Query("SELECT d.id, COUNT(e) FROM Employee e RIGHT JOIN e.department d WHERE d.id IN :departmentIds GROUP BY d.id")
-  Map<Long, Long> countEmployeesByDepartmentIds(List<Long> departmentIds);
 }

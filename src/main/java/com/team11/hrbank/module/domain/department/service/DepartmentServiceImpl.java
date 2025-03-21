@@ -170,16 +170,12 @@ public class DepartmentServiceImpl implements DepartmentService {
       }
     }
 
-    Map<Long, Long> departmentEmployeeCounts = employeeRepository.countEmployeesByDepartmentIds(
-        departmentPage.getContent().stream()
-            .map(Department::getId)
-            .collect(Collectors.toList()));
-
     List<DepartmentDto> departmentDtos = departmentPage.getContent().stream()
         .map(department -> {
-          Long employeeCount = departmentEmployeeCounts.getOrDefault(department.getId(), 0L);
+          Long employeeCount = employeeRepository.countByDepartmentId(department.getId());
           return departmentMapper.toDepartmentDtoWithEmployeeCount(department, employeeCount);
-        }).collect(Collectors.toList());
+        })
+        .collect(Collectors.toList());
 
     // 마지막 요소의 ID 추출
     Long lastId = !departmentDtos.isEmpty() ? departmentDtos.get(departmentDtos.size() - 1).id() : null;
