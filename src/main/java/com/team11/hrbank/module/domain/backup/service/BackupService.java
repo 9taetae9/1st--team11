@@ -1,7 +1,6 @@
 package com.team11.hrbank.module.domain.backup.service;
 
 import com.team11.hrbank.module.common.dto.CursorPageResponse;
-import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.backup.BackupHistory;
 import com.team11.hrbank.module.domain.backup.BackupStatus;
 import com.team11.hrbank.module.domain.backup.dto.BackupDto;
@@ -10,11 +9,9 @@ import com.team11.hrbank.module.domain.backup.repository.BackupHistoryRepository
 import com.team11.hrbank.module.domain.backup.repository.BackupSpecifications;
 import com.team11.hrbank.module.domain.backup.service.data.BackupDataService;
 import com.team11.hrbank.module.domain.backup.service.file.BackupFileStorageService;
-import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.service.FileService;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -35,141 +32,102 @@ public class BackupService {
     private final BackupFileStorageService fileStorageService;
     private final BackupDataService backupDataService;
     private final FileService fileService;
-    private final ChangeLogRepository changeLogRepository;
     private final BackupMapper backupMapper;
+    private final BackupTransactionService backupTxService; //트랜잭션 관련 로직
 
     /**
      * 백업을 실행하고 결과를 반환
+     *
      * @param workerIp 작업자 ip 또는 system
      * @return 생성된 백업 이력
      */
-    @Transactional
     public BackupHistory performBackup(String workerIp) {
-        if (backupHistoryRepository.countInProgressBackups() > 0) {
+        // 1. 진행 중인 백업 확인
+        if (backupTxService.isBackupInProgress()) {
             throw new IllegalStateException("이미 진행 중인 백업이 존재합니다.");
         }
 
         log.info("백업 실행 요청 받음 - 요청자 IP: {}", workerIp);
 
-        Instant lastBackupTime = backupHistoryRepository.findLatestCompletedBackupTime();
-        boolean isChanged;
-        if (lastBackupTime == null) {
-            isChanged = true;
-            log.info("첫 백업 실행");
-        }else{
-            long changesCount = changeLogRepository.countByDateRangeFrom(lastBackupTime);
-            isChanged = changesCount > 0;
-            log.info("last backup time: {},. changes count: {}", lastBackupTime, changesCount);
-        }
+        // 2. 변경 사항 확인
+        boolean isChanged = backupTxService.checkIfChangesExist();
 
-        //변경 사항 없는 경우 skip
-        if(!isChanged){
-            BackupHistory skippedHistory = saveBackupHistory(workerIp, BackupStatus.SKIPPED, null);
+        // 3. 변경 사항 없는 경우 skip
+        if (!isChanged) {
+            BackupHistory skippedHistory = backupTxService.saveBackupHistory(workerIp, BackupStatus.SKIPPED, null);
             log.info("백업 불필요 - SKIPPED 상태로 저장, ID: {}", skippedHistory.getId());
             return skippedHistory;
         }
 
-        BackupHistory backupHistory = saveBackupHistory(workerIp, BackupStatus.IN_PROGRESS, null);
+        // 4. 백업 시작
+        BackupHistory backupHistory = backupTxService.saveBackupHistory(workerIp, BackupStatus.IN_PROGRESS, null);
         log.info("백업 시작 - 이력 ID: {}", backupHistory.getId());
 
         File backupFile = null;
+        String backupFilePath = null;
         try {
-
-            String backupFilePath = fileStorageService.saveBackupToCsv(backupDataService.getAllDataForBackup());
+            // 5. 백업 파일 생성 (트랜잭션 외부 작업)
+            backupFilePath = fileStorageService.saveBackupToCsv(backupDataService.getAllDataForBackup());
             log.info("백업 파일 생성 완료: {}", backupFilePath);
 
-            backupFile = createFileEntity(backupFilePath);
+            // 6. 파일 엔티티 생성
+            backupFile = backupTxService.createFileEntity(backupFilePath);
 
-            backupHistory.setStatus(BackupStatus.COMPLETED);
-            backupHistory.setEndedAt(Instant.now());
-            backupHistory.setFile(backupFile);
-            backupHistoryRepository.save(backupHistory);
-
+            // 7. 백업 완료 처리
+            BackupHistory updatedHistory = backupTxService.updateBackupStatus(
+                backupHistory.getId(), BackupStatus.COMPLETED, backupFile);
             log.info("백업 완료 - 저장된 파일: {}", backupFilePath);
-            return backupHistory;
+
+            return updatedHistory;
         } catch (IOException e) {
             log.error("백업 실패", e);
 
-            if (backupFile != null) {
-                log.info("실패한 백업 파일 삭제 시도: {}", backupFile.getFilePath());
-                fileService.deleteFile(backupFile);
-            }
-
-            try {
-                String errorLogPath = fileStorageService.saveErrorLog(e);
-                File errorLogFile = createFileEntity(errorLogPath);
-
-                backupHistory.setStatus(BackupStatus.FAILED);
-                backupHistory.setEndedAt(Instant.now());
-                backupHistory.setFile(errorLogFile);
-                backupHistoryRepository.save(backupHistory);
-
-                log.info("백업 실패 - 에러 로그 저장: {}", errorLogPath);
-            } catch (Exception ex) {
-                log.error("에러 로그 저장 실패", ex);
-
-                backupHistory.setStatus(BackupStatus.FAILED);
-                backupHistory.setEndedAt(Instant.now());
-                backupHistoryRepository.save(backupHistory);
-            }
+            // 8. 실패 처리
+            handleBackupFailure(backupHistory.getId(), backupFile, backupFilePath, e);
 
             throw new RuntimeException("백업 실패: " + e.getMessage(), e);
         }
     }
 
-    private BackupHistory saveBackupHistory(String worker, BackupStatus status, File file) {
-        BackupHistory backupHistory = new BackupHistory();
-        backupHistory.setWorker(worker);
-        backupHistory.setStartAt(Instant.now());
-        backupHistory.setStatus(status);
-        backupHistory.setFile(file);
-        return backupHistoryRepository.save(backupHistory);
-    }
-
     /**
-     * 파일 엔티티 생성
+     * 백업 실패 처리
      */
-    private File createFileEntity(String filePath) throws IOException{
-        if (filePath == null || filePath.isEmpty()) {
-            throw new IllegalArgumentException("파일 경로가 유효하지 않습니다.");
+    private void handleBackupFailure(Long backupId, File backupFile, String backupFilePath, Exception error) {
+        // 1. 이미 생성된 파일 정리
+        if (backupFile != null) {
+            try {
+                fileService.deleteFile(backupFile);
+            } catch (Exception e) {
+                log.error("백업 파일 삭제 실패: {}", e.getMessage(), e);
+            }
+        } else if (backupFilePath != null) {
+            try {
+                fileService.deleteActualFile(backupFilePath);
+            } catch (Exception e) {
+                log.error("물리적 백업 파일 삭제 실패: {}", e.getMessage(), e);
+            }
         }
 
-        java.io.File actualFile = new java.io.File(filePath);
-        if (!actualFile.exists()) {
-            throw new IOException("파일이 존재하지 않습니다: " + filePath);
+        // 2. 에러 로그 저장 및 백업 상태 업데이트
+        try {
+            // 에러 로그 저장 (파일 시스템 작업)
+            String errorLogPath = fileStorageService.saveErrorLog(error);
+
+            // 에러 로그 파일 엔티티 생성
+            File errorLogFile = backupTxService.createFileEntity(errorLogPath);
+
+            // 백업 이력 실패 업데이트
+            backupTxService.updateBackupStatus(backupId, BackupStatus.FAILED, errorLogFile);
+        } catch (Exception e) {
+            log.error("백업 실패 처리 중 오류: {}", e.getMessage(), e);
+
+            // 최소한의 상태 업데이트 시도
+            try {
+                backupTxService.updateBackupStatusWithoutFile(backupId, BackupStatus.FAILED);
+            } catch (Exception ex) {
+                log.error("백업 상태 업데이트 최종 실패", ex);
+            }
         }
-
-        File file = new File();
-//        file.setFileName(filePath.substring(filePath.lastIndexOf("/") + 1));
-        file.setFileName(Paths.get(filePath).getFileName().toString());
-        file.setFilePath(filePath);
-
-        String fileName = file.getFileName();
-        int lastDotIndex = fileName.lastIndexOf('.');
-        String format = lastDotIndex > 0 ? fileName.substring(lastDotIndex + 1).toUpperCase() : "";
-        file.setFormat(format);
-
-        file.setSize(actualFile.length());
-        return fileService.saveFile(file);
-    }
-
-    /**
-     * 백업 이력 조회 메서드 (페이징 및 필터링 지원)
-     * @param worker 작업자 (부분 일치)
-     * @param status 백업 상태 (정확한 일치)
-     * @param startedAtFrom 시작 시간 범위 (시작)
-     * @param startedAtTo 시작 시간 범위 (종료)
-     * @param idAfter 이전 페이지의 마지막 요소 ID (커서 기반 페이징)
-     * @param pageable 페이지네이션 정보
-     * @return 조건에 맞는 백업 이력을 Page 객체로 반환
-     */
-    public Page<BackupHistory> getFilteredBackups(String worker, BackupStatus status,
-                                                  Instant startedAtFrom, Instant startedAtTo,
-                                                  Long idAfter, Pageable pageable) {
-
-        return backupHistoryRepository.findAll(
-            BackupSpecifications.withCriteria(worker, status, startedAtFrom, startedAtTo, idAfter),
-                                            pageable);
     }
 
     /**
@@ -184,13 +142,11 @@ public class BackupService {
         }
 
         return backupHistoryRepository.findTopByStatusOrderByStartAtDesc(status)
-            .orElseThrow(() -> ResourceNotFoundException.of(
-                "BackupHistory", "status", status.toString()));
+            .orElseThrow(() -> new RuntimeException("해당 상태의 백업이 존재하지 않습니다: " + status));
     }
 
-
     /**
-     *커서기반 페이징으로 백업 이력 조회
+     * 커서기반 페이징으로 백업 이력 조회
      */
     @Transactional(readOnly = true)
     public CursorPageResponse<BackupDto> getBackupHistoriesWithCursor(
@@ -234,11 +190,23 @@ public class BackupService {
             backupHistories.getTotalElements());
     }
 
+    /**
+     * 백업 이력 조회 메서드 (페이징 및 필터링 지원)
+     */
+    @Transactional(readOnly = true)
+    public Page<BackupHistory> getFilteredBackups(String worker, BackupStatus status,
+        Instant startedAtFrom, Instant startedAtTo,
+        Long idAfter, Pageable pageable) {
+
+        return backupHistoryRepository.findAll(
+            BackupSpecifications.withCriteria(worker, status, startedAtFrom, startedAtTo, idAfter),
+            pageable);
+    }
+
     private String mapSortField(String sortField) {
         if (sortField == null || sortField.equals("startedAt")) {
             return "startAt";
         }
-
         return sortField;
     }
 }
