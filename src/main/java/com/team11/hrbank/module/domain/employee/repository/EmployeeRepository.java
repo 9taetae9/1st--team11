@@ -1,8 +1,9 @@
 package com.team11.hrbank.module.domain.employee.repository;
 
 import com.team11.hrbank.module.domain.employee.Employee;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -13,10 +14,13 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
   List<String> findAllEmails();
 
   // 기본 메서드를 이용하여 입사일과 상태로 직원 조회
-  List<Employee> findByHireDateLessThanEqual(Instant toDate);
+  List<Employee> findByHireDateLessThanEqual(LocalDate toDate);
 
-  int countEmployeesByHireDateBetween(Instant from, Instant to);
+  int countEmployeesByHireDateBetween(LocalDate from, LocalDate to);
 
 
   long countByDepartmentId(Long departmentId);
+
+  @Query("SELECT d.id, COUNT(e) FROM Employee e RIGHT JOIN e.department d WHERE d.id IN :departmentIds GROUP BY d.id")
+  Map<Long, Long> countEmployeesByDepartmentIds(List<Long> departmentIds);
 }

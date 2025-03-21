@@ -12,9 +12,7 @@ import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -146,15 +144,8 @@ public class EmployeeController {
       @RequestParam(required = false, defaultValue = "month") String unit) {
     log.info("직원 수 추이 조회: from={}, to={}, unit={}", from, to, unit);
 
-    Instant fromInstant = (from != null)
-        ? from.atStartOfDay(ZoneId.of("UTC")).toInstant()
-        : null;
 
-    Instant toInstant = (to != null)
-        ? to.atStartOfDay(ZoneId.of("UTC")).toInstant()
-        : null;
-
-    return ResponseEntity.ok(employeeQueryService.getEmployeeTrend(fromInstant, toInstant, unit));
+    return ResponseEntity.ok(employeeQueryService.getEmployeeTrend(from, to, unit));
   }
 
   // 직원 수 조회

@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,8 +23,8 @@ public class Department extends UpdatableEntity {
   @Column(name = "description", length = Integer.MAX_VALUE)
   private String description;
 
-  @Column(name = "established_date", nullable = false, columnDefinition = "DATE")
-  private Instant establishedDate;
+  @Column(name = "established_date", nullable = false) //columnDefinition = "DATE")
+  private LocalDate establishedDate;
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
