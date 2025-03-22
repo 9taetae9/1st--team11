@@ -6,7 +6,6 @@ import com.team11.hrbank.module.domain.backup.BackupStatus;
 import com.team11.hrbank.module.domain.backup.dto.BackupDto;
 import com.team11.hrbank.module.domain.backup.mapper.BackupMapper;
 import com.team11.hrbank.module.domain.backup.service.BackupService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/backups")
 @RequiredArgsConstructor
-@Tag(name = "Backup Management", description = "백업 관리 API")
-public class BackupController {
+
+public class BackupController implements BackupApi {
 
     private final BackupService backupService;
     private final BackupMapper backupMapper;
@@ -40,7 +39,7 @@ public class BackupController {
         if (latestBackup == null) {
             // 백업 기록이 없는 경우 빈 객체와 메시지를 반환
             BackupDto emptyResponse = new BackupDto(
-                    null, null, null, null, BackupStatus.SKIPPED, null
+                null, null, null, null, BackupStatus.SKIPPED, null
             );
 
             log.info("백업 기록 없음 - 상태: {}", status);
@@ -72,15 +71,15 @@ public class BackupController {
      */
     @GetMapping
     public ResponseEntity<CursorPageResponse<BackupDto>> getBackupHistories(
-            @RequestParam(required = false) String worker,
-            @RequestParam(required = false) BackupStatus status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtTo,
-            @RequestParam(required = false) Long idAfter, // 이전 페이지 마지막 요소 id
-            @RequestParam(required = false) String cursor,//커서 (이전 페이지 마지막 id)
-            @RequestParam(required = false, defaultValue = "10") int size,
-            @RequestParam(required = false, defaultValue = "startAt") String sortField,//startedAt,endedAt,status
-            @RequestParam(required = false, defaultValue = "DESC") String sortDirection
+        @RequestParam(required = false) String worker,
+        @RequestParam(required = false) BackupStatus status,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtFrom,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startedAtTo,
+        @RequestParam(required = false) Long idAfter, // 이전 페이지 마지막 요소 id
+        @RequestParam(required = false) String cursor,//커서 (이전 페이지 마지막 id)
+        @RequestParam(required = false, defaultValue = "10") int size,
+        @RequestParam(required = false, defaultValue = "startAt") String sortField,//startedAt,endedAt,status
+        @RequestParam(required = false, defaultValue = "DESC") String sortDirection
     ) {
 
         CursorPageResponse<BackupDto> response = backupService.getBackupHistoriesWithCursor(

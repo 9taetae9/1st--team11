@@ -2,7 +2,6 @@ package com.team11.hrbank.module.domain.file.controller;
 
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.service.FileService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -20,8 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
-@Tag(name = "File Management", description = "파일 관리 API")
-public class FileController {
+public class FileController implements FileApi {
 
     private final FileService fileService;
 
