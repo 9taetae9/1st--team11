@@ -36,6 +36,17 @@ public class BackupController {
     public ResponseEntity<BackupDto> getLatestBackup(
         @RequestParam(required = false, defaultValue = "COMPLETED") BackupStatus status) {
         BackupHistory latestBackup = backupService.getLatestBackupByStatus(status);
+
+        if (latestBackup == null) {
+            // 백업 기록이 없는 경우 빈 객체와 메시지를 반환
+            BackupDto emptyResponse = new BackupDto(
+                    null, null, null, null, BackupStatus.SKIPPED, null
+            );
+
+            log.info("백업 기록 없음 - 상태: {}", status);
+            return ResponseEntity.ok(emptyResponse); // 200 OK 상태 반환
+        }
+
         return ResponseEntity.ok(backupMapper.toDto(latestBackup));
     }
 

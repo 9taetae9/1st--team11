@@ -142,7 +142,7 @@ public class BackupService {
         }
 
         return backupHistoryRepository.findTopByStatusOrderByStartAtDesc(status)
-            .orElseThrow(() -> new RuntimeException("해당 상태의 백업이 존재하지 않습니다: " + status));
+            .orElseThrow(null);
     }
 
     /**
