@@ -1,6 +1,7 @@
 package com.team11.hrbank.module.domain.employee.dto;
 
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
+
 import java.time.LocalDate;
 
 public record EmployeeUpdateRequest (

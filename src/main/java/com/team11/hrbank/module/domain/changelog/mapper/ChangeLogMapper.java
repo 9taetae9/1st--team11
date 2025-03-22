@@ -2,11 +2,12 @@ package com.team11.hrbank.module.domain.changelog.mapper;
 
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
 import com.team11.hrbank.module.domain.changelog.dto.ChangeLogDto;
-import java.net.InetAddress;
-import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+
+import java.net.InetAddress;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ChangeLogMapper {

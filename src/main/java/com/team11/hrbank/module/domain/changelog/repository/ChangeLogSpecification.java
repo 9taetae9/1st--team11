@@ -3,11 +3,12 @@ package com.team11.hrbank.module.domain.changelog.repository;
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
 import com.team11.hrbank.module.domain.changelog.HistoryType;
 import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.jpa.domain.Specification;
+
 import java.net.InetAddress;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.data.jpa.domain.Specification;
 
 public class ChangeLogSpecification {
 

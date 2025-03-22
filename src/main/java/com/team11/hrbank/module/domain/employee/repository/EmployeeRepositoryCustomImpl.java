@@ -10,10 +10,11 @@ import com.team11.hrbank.module.domain.employee.Employee;
 import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.QEmployee;
 import com.team11.hrbank.module.domain.employee.dto.EmployeeDistributionDto;
+import org.springframework.stereotype.Repository;
+
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import org.springframework.stereotype.Repository;
 
 @Repository
 public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {

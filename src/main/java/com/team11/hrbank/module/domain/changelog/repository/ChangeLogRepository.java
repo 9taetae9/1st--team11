@@ -1,11 +1,12 @@
 package com.team11.hrbank.module.domain.changelog.repository;
 
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
-import java.time.Instant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.Instant;
 
 public interface ChangeLogRepository extends JpaRepository<ChangeLog, Long>,
     JpaSpecificationExecutor<ChangeLog> {
