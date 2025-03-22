@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChangeLog extends BaseEntity {
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "employee_id", nullable = false)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "employee_id")
   private Employee employee;
 
   @Column(name = "employee_number", nullable = false, length = 25)
@@ -59,6 +59,18 @@ public class ChangeLog extends BaseEntity {
     if (changeLogDiff != null && changeLogDiff.getChangeLog() != this) {
       changeLogDiff.setChangeLog(this);
     }
+  }
+
+  // 삭제용 메서드 추가
+  public static ChangeLog createForDelete(String employeeNumber, String memo,
+                                          InetAddress ipAddress) {
+    ChangeLog changeLog = new ChangeLog();
+    changeLog.employee = null;  // 직원 참조x
+    changeLog.employeeNumber = employeeNumber;
+    changeLog.memo = memo;
+    changeLog.ipAddress = ipAddress;
+    changeLog.type = HistoryType.DELETED;
+    return changeLog;
   }
 
 }

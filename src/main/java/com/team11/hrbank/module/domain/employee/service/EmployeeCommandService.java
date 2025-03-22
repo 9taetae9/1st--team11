@@ -17,20 +17,19 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeUpdateRequest;
 import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.file.File;
-import com.team11.hrbank.module.domain.file.exception.FileDeleteException;
 import com.team11.hrbank.module.domain.file.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -223,38 +222,76 @@ public class EmployeeCommandService {
     return employeeMapper.toDto(employee);
   }
 
-  // 직원 삭제
   @Transactional
   public void deleteEmployee(Long id, HttpServletRequest request) {
     // 직원 조회
     Employee employee = employeeRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("employee(" + id + ")는 존재하지 않습니다."));
+            .orElseThrow(() -> ResourceNotFoundException.of("Employee","id", id));
 
-    // 프로필 이미지가 존재하는 경우 처리
-    if (employee.getProfileImage() != null && employee.getProfileImage().getId() != null) {
-      try {
-        fileService.deleteFile(employee.getProfileImage());
-        log.info("직원 프로필 이미지 삭제 성공: {}", employee.getProfileImage().getFileName());
-      } catch (FileDeleteException e) {
-        log.error("프로필 이미지 삭제 중 오류 발생: {}", e.getMessage());
-      } catch (Exception e) {
-        log.error("프로필 이미지 삭제 중 예상치 못한 오류 발생: {}", e.getMessage(), e);
-      }
+    // 직원 정보 추출
+    String employeeNumber = employee.getEmployeeNumber();
+    String name = employee.getName();
+    String position = employee.getPosition();
+    String departmentName = employee.getDepartment() != null ? employee.getDepartment().getName() : "";
+    String email = employee.getEmail();
+    String status = employee.getStatus() != null ? employee.getStatus().toString() : "";
+    String hireDate = employee.getHireDate() != null ? employee.getHireDate().toString() : "";
+
+    // 프로필 이미지 정보 추출 및 참조 제거
+    File profileImage = employee.getProfileImage();
+    if (profileImage != null) {
+      employee.updateProfileImage(null);
+      employeeRepository.save(employee);
     }
 
-    // 직원 상태 변경 (퇴사 처리)
-    employee.updateStatus(EmployeeStatus.RESIGNED);
+    // 직원 삭제
+    employeeRepository.delete(employee);
+    log.info("직원 id: {} db에서 완전히 삭제", id);
 
-    //삭제 이력 생성
+    // 삭제 이력 생성 (employee 참조 없이 처리)
     try {
-      InetAddress ipAddress = getIpAddress(request);
-      ChangeLog changeLog = ChangeLog.create(employee, employee.getEmployeeNumber(), "작원 삭제 처리",
-          ipAddress,
-          HistoryType.DELETED);
+      InetAddress ipAddress;
+      try {
+        ipAddress = getIpAddress(request);
+      } catch (UnknownHostException e) {
+        log.warn("IP 주소 조회 실패, 기본값 사용: {}", e.getMessage());
+        ipAddress = InetAddress.getByName("0.0.0.0");
+      }
+
+      // employee 파라미터 없이 처리
+      ChangeLog changeLog = ChangeLog.createForDelete(
+              employeeNumber,
+              "직원 삭제 처리",
+              ipAddress
+      );
+
+      // 변경 세부 내역 생성
+      List<DiffEntry> changes = new ArrayList<>();
+      changes.add(DiffEntry.of("입사일", hireDate, ""));
+      changes.add(DiffEntry.of("이름", name, ""));
+      changes.add(DiffEntry.of("직함", position, ""));
+      changes.add(DiffEntry.of("부서명", departmentName, ""));
+      changes.add(DiffEntry.of("이메일", email, ""));
+      changes.add(DiffEntry.of("상태", status, ""));
+
+      ChangeLogDiff changeLogDiff = ChangeLogDiff.create(changeLog, changes);
+      changeLog.setChangeLogDiff(changeLogDiff);
 
       changeLogRepository.save(changeLog);
-    } catch (UnknownHostException e) {
-      log.error("IP 주소 조회 실패: {}", e.getMessage());
+      log.info("직원 삭제 이력 생성 완료: {}", employeeNumber);
+
+    } catch (Exception e) {
+      log.error("직원 삭제 이력 생성 중 오류: {}", e.getMessage(), e);
+    }
+
+    // 프로필 이미지 삭제
+    if (profileImage != null) {
+      try {
+        fileService.deleteFile(profileImage);
+        log.info("직원 프로필 이미지 삭제 성공: {}", profileImage.getFileName());
+      } catch (Exception e) {
+        log.error("프로필 이미지 삭제 실패: {}", e.getMessage(), e);
+      }
     }
   }
 
