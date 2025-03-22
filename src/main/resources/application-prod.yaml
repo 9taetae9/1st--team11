@@ -3,6 +3,9 @@ spring:
     url: ${DATABASE_PUBLIC_URL}
     username: ${PGUSER}
     password: ${PGPASSWORD}
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
 
   jpa:
     show-sql: false
