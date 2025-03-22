@@ -8,7 +8,11 @@ import com.team11.hrbank.module.domain.department.service.DepartmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,31 +26,31 @@ public class DepartmentController implements DepartmentApi {
 
   private final DepartmentService departmentService;
 
-  @Override
+  @PostMapping
   public ResponseEntity<DepartmentDto> createDepartment(@RequestBody @Valid DepartmentCreateRequest request) {
     DepartmentDto department = departmentService.createDepartment(request);
     return ResponseEntity.ok(department);
   }
 
-  @Override
+  @PatchMapping("/{id}")
   public ResponseEntity<DepartmentDto> updateDepartment(@PathVariable("id") Long id, @RequestBody @Valid DepartmentUpdateRequest request) {
     DepartmentDto updateDepartment = departmentService.updateDepartment(id, request);
     return ResponseEntity.ok(updateDepartment);
   }
 
-  @Override
-  public ResponseEntity<String> deleteDepartment(@PathVariable Long id) {
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
     departmentService.deleteDepartment(id);
     return ResponseEntity.noContent().build();
   }
 
-  @Override
+  @GetMapping("/{id}")
   public ResponseEntity<DepartmentDto> getDepartmentById(@PathVariable Long id) {
     DepartmentDto department = departmentService.getDepartmentById(id);
     return ResponseEntity.ok(department);
   }
 
-  @Override
+  @GetMapping
   public ResponseEntity<CursorPageResponse<DepartmentDto>> getAllDepartments(
       @RequestParam(required = false) String nameOrDescription,
       @RequestParam(required = false) Long idAfter,
