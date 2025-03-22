@@ -12,7 +12,6 @@ import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -137,8 +136,11 @@ public class DepartmentServiceImpl implements DepartmentService {
     boolean isAscending = sortDirection == null || "asc".equalsIgnoreCase(sortDirection);
 
     Pageable pageable = PageRequest.of(0, size,
-        isAscending ? Sort.Direction.ASC : Sort.Direction.DESC,
-        sortField);
+        Sort.by(
+                isAscending ? Sort.Direction.ASC : Sort.Direction.DESC, sortField)
+            .and(Sort.by(
+                isAscending ? Sort.Direction.ASC : Sort.Direction.DESC, "name"))
+    );
 
     Page<Department> departmentPage;
 

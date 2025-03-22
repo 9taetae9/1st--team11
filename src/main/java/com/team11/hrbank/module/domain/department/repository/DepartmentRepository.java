@@ -12,16 +12,13 @@ import org.springframework.stereotype.Repository;
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
   boolean existsByName(String name);
 
-  // 대소문자 구분 안함 -> 프로토타입 확인 완료
-
   // 커서 기반 페이지네이션 (ID 이후) - 오름차순
-  @Query("SELECT d FROM Department d WHERE d.id > :id ORDER BY d.id ASC")
+  @Query("SELECT d FROM Department d WHERE d.id > :id ORDER BY d.establishedDate ASC, d.name ASC")
   Page<Department> findAllWithCursorAsc(@Param("id") Long id, Pageable pageable);
 
   // 커서 기반 페이지네이션 (ID 이전) - 내림차순
-  @Query("SELECT d FROM Department d WHERE d.id < :id ORDER BY d.id DESC")
+  @Query("SELECT d FROM Department d WHERE d.id < :id ORDER BY d.establishedDate DESC, d.name DESC")
   Page<Department> findAllWithCursorDesc(@Param("id") Long id, Pageable pageable);
-
 
   // 이름 또는 설명으로 검색 + 페이지네이션 지원
   @Query("SELECT d FROM Department d WHERE " +
@@ -34,7 +31,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   @Query("SELECT d FROM Department d WHERE " +
       "d.id > :id AND (LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
       "LOWER(d.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-      "ORDER BY d.id ASC")
+      "ORDER BY d.establishedDate ASC, d.name ASC")
   Page<Department> searchWithCursorAsc(
       @Param("id") Long id, @Param("search") String search, Pageable pageable);
 
@@ -42,8 +39,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   @Query("SELECT d FROM Department d WHERE " +
       "d.id < :id AND (LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
       "LOWER(d.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-      "ORDER BY d.id DESC")
+      "ORDER BY d.establishedDate DESC, d.name DESC")
   Page<Department> searchWithCursorDesc(
       @Param("id") Long id, @Param("search") String search, Pageable pageable);
-
 }
