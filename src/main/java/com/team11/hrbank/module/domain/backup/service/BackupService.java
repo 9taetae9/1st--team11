@@ -142,7 +142,7 @@ public class BackupService {
         }
 
         return backupHistoryRepository.findTopByStatusOrderByStartAtDesc(status)
-            .orElseThrow(null);
+            .orElse(null);
     }
 
     /**
