@@ -4,7 +4,7 @@
 
 | 이름     | 역할                                                                 |
 |----------|----------------------------------------------------------------------|
-| [김태현](https://github.com/example) | - 프로젝트 기본 세팅 및 Schema 설계<br>- GitHub 관리: Branch Rule, Issue Templates 설정<br>- Changelog 구현 및 단위 테스트<br>- 백업 파트 구현, 직원, 파일 관리 CUD 개선 |
+| [김태현](https://github.com/9taetae9) | - 프로젝트 기본 세팅 및 Schema 설계<br>- GitHub 관리: Branch Rule, Issue Templates 설정<br>- Changelog 구현 및 단위 테스트<br>- 백업 파트 구현, 직원, 파일 관리 CUD 개선 |
 | [김경린](https://github.com/k01zero) | - 직원 도메인 구현<br>- 배포 조사, 문서 작성 및 시연 |
 | [박지현](https://github.com/jjhparkk) | - 부서 관리 CRUD 및 정렬 기능 구현<br>- 배포 조사, 문서 작성 및 시연 |
 | [장건희](https://github.com/Gunh2ee) | - 파일 관리 구현<br>- Swagger 문서화 |
