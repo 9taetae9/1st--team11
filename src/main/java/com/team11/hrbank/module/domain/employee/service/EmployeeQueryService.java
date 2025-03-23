@@ -73,15 +73,22 @@ public class EmployeeQueryService {
         sortDirection);
 
     // 다음 페이지가 있으면 마지막 아이템 제거
-    if (employees.size()> size) {
+    boolean hasNext = employees.size() > size;
+    if(hasNext) {
       employees.remove(size);
     }
 
-    // 데이터가 없으면 빈 응답 반환
     if (employees.isEmpty()) {
-      return CursorPageResponse.of(List.of(), null, null, size,
-              getEmployeeCount(status, hireDateFrom, hireDateTo));
+      return new CursorPageResponse<>(
+              List.of(),
+              null,
+              null,
+              size,
+              getEmployeeCount(status, hireDateFrom, hireDateTo),
+              false
+      );
     }
+
 
     //마지막 직원 정보 가져오기
     Employee lastEmployee = employees.get(employees.size() - 1);
@@ -107,7 +114,7 @@ public class EmployeeQueryService {
 
     long totalCount = getEmployeeCount(status, hireDateFrom, hireDateTo);
 
-    return CursorPageResponse.of(employeeDtos, nextCursorValue, lastId, size, totalCount);
+    return CursorPageResponse.of(employeeDtos, nextCursorValue, hasNext ? lastId : null, size, totalCount, hasNext);
   }
 
   // 직원 분포 조회
