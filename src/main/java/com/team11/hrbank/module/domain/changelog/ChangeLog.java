@@ -7,8 +7,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.net.InetAddress;
-
 @Getter
 @Entity
 @Table(name = "change_logs")
@@ -25,8 +23,8 @@ public class ChangeLog extends BaseEntity {
   @Column(name = "memo", columnDefinition = "TEXT")
   private String memo;
 
-  @Column(name = "ip_address", nullable = false)
-  private InetAddress ipAddress;
+  @Column(name = "ip_address", nullable = false, length = 45)
+  private String ipAddress;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)
@@ -36,7 +34,7 @@ public class ChangeLog extends BaseEntity {
   private ChangeLogDiff changeLogDiff;
 
   public static ChangeLog create(Employee employee, String employeeNumber, String memo,
-      InetAddress ipAddress, HistoryType type) {
+      String ipAddress, HistoryType type) {
     ChangeLog changeLog = new ChangeLog();
     changeLog.employee = employee;
     changeLog.employeeNumber = employeeNumber;
@@ -55,7 +53,7 @@ public class ChangeLog extends BaseEntity {
 
   // 삭제용 메서드 추가
   public static ChangeLog createForDelete(String employeeNumber, String memo,
-                                          InetAddress ipAddress) {
+                                          String ipAddress) {
     ChangeLog changeLog = new ChangeLog();
     changeLog.employee = null;  // 직원 참조x
     changeLog.employeeNumber = employeeNumber;

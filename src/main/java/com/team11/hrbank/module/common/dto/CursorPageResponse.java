@@ -1,6 +1,5 @@
 package com.team11.hrbank.module.common.dto;
 
-import java.util.Base64;
 import java.util.List;
 
 public record CursorPageResponse<T>(
