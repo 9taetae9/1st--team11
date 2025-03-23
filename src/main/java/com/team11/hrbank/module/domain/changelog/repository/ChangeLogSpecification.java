@@ -42,8 +42,8 @@ public class ChangeLogSpecification {
         predicates.add(criteriaBuilder.like(root.get("memo"), "%" + memo + "%"));
       }
 
-      if (ipAddress != null) {
-        predicates.add(criteriaBuilder.equal(root.get("ipAddress"), ipAddress));
+      if (ipAddress != null && !ipAddress.isEmpty()) {
+        predicates.add(criteriaBuilder.like(root.get("ipAddress"), "%" + ipAddress + "%"));
       }
 
       if (fromDate != null) {

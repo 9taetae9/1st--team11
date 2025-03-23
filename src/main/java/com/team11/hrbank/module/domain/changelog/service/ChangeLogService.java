@@ -5,7 +5,6 @@ import com.team11.hrbank.module.domain.changelog.HistoryType;
 import com.team11.hrbank.module.domain.changelog.dto.ChangeLogDto;
 import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 
-import java.net.InetAddress;
 import java.time.Instant;
 import java.util.List;
 
