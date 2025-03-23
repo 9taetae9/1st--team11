@@ -5,7 +5,6 @@ import com.team11.hrbank.module.domain.employee.EmployeeStatus;
 import com.team11.hrbank.module.domain.employee.dto.*;
 import com.team11.hrbank.module.domain.employee.service.EmployeeCommandService;
 import com.team11.hrbank.module.domain.employee.service.EmployeeQueryService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +22,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employees")
 @RequiredArgsConstructor
-@Tag(name = "Employee Management", description = "직원 관리 API")
-public class EmployeeController {
+
+public class EmployeeController implements EmployeeApi {
 
   /**
    * 추신: ErrorResponse 이용 여부

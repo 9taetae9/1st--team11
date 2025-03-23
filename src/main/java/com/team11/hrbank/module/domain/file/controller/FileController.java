@@ -2,7 +2,9 @@ package com.team11.hrbank.module.domain.file.controller;
 
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.service.FileService;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -13,15 +15,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
 @Slf4j
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
-@Tag(name = "File Management", description = "파일 관리 API")
-public class FileController {
+public class FileController implements FileApi {
 
     private final FileService fileService;
 
@@ -31,7 +29,7 @@ public class FileController {
      * Content-Type을 명확히 지정하여 OpenAPI 명세와 일치하도록 수정.
      */
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") long id) {
+    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") long id) throws IOException {
         File fileEntity = fileService.getFileById(id);
         log.info("파일 다운로드 요청: {}", fileEntity.getFileName());
 
