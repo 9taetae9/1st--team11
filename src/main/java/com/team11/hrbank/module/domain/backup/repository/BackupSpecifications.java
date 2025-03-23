@@ -45,26 +45,69 @@ public class BackupSpecifications {
         predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startAt"), startedAtTo));
       }
 
-      // 커서 조건 추가
+      // 커서 조건
       boolean isAscending = !"DESC".equalsIgnoreCase(sortDirection);
 
-      if (cursorTimestamp != null) {
-        // 타임스탬프 기반 커서
+      // 타임스탬프 커서, ID 커서 동시에 지정
+      if (cursorTimestamp != null && idAfter != null) {
+        // 타임스탬프 기반 정렬 시 타임스탬프 우선
+        if ("startAt".equals(sortField)) {
+          if (isAscending) {
+            Predicate timeGreaterThan = criteriaBuilder.greaterThan(root.get("startAt"), cursorTimestamp);
+            Predicate timeEqualAndIdGreater = criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("startAt"), cursorTimestamp),
+                    criteriaBuilder.greaterThan(root.get("id"), idAfter)
+            );
+            predicates.add(criteriaBuilder.or(timeGreaterThan, timeEqualAndIdGreater));
+          } else {
+            Predicate timeLessThan = criteriaBuilder.lessThan(root.get("startAt"), cursorTimestamp);
+            Predicate timeEqualAndIdLess = criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("startAt"), cursorTimestamp),
+                    criteriaBuilder.lessThan(root.get("id"), idAfter)
+            );
+            predicates.add(criteriaBuilder.or(timeLessThan, timeEqualAndIdLess));
+          }
+        } else if ("endedAt".equals(sortField)) {
+          if (isAscending) {
+            Predicate timeGreaterThan = criteriaBuilder.greaterThan(root.get("endedAt"), cursorTimestamp);
+            Predicate timeEqualAndIdGreater = criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("endedAt"), cursorTimestamp),
+                    criteriaBuilder.greaterThan(root.get("id"), idAfter)
+            );
+            predicates.add(criteriaBuilder.or(timeGreaterThan, timeEqualAndIdGreater));
+          } else {
+            Predicate timeLessThan = criteriaBuilder.lessThan(root.get("endedAt"), cursorTimestamp);
+            Predicate timeEqualAndIdLess = criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("endedAt"), cursorTimestamp),
+                    criteriaBuilder.lessThan(root.get("id"), idAfter)
+            );
+            predicates.add(criteriaBuilder.or(timeLessThan, timeEqualAndIdLess));
+          }
+        } else {
+          // 정렬 필드는 ID만 사용
+          if (isAscending) {
+            predicates.add(criteriaBuilder.greaterThan(root.get("id"), idAfter));
+          } else {
+            predicates.add(criteriaBuilder.lessThan(root.get("id"), idAfter));
+          }
+        }
+      } else if (cursorTimestamp != null) {
+        // 타임스탬프만
         if ("startAt".equals(sortField)) {
           if (isAscending) {
             predicates.add(criteriaBuilder.greaterThan(root.get("startAt"), cursorTimestamp));
           } else {
             predicates.add(criteriaBuilder.lessThan(root.get("startAt"), cursorTimestamp));
           }
-        } else if ("endAt".equals(sortField)) {
+        } else if ("endedAt".equals(sortField)) {
           if (isAscending) {
-            predicates.add(criteriaBuilder.greaterThan(root.get("endAt"), cursorTimestamp));
+            predicates.add(criteriaBuilder.greaterThan(root.get("endedAt"), cursorTimestamp));
           } else {
-            predicates.add(criteriaBuilder.lessThan(root.get("endAt"), cursorTimestamp));
+            predicates.add(criteriaBuilder.lessThan(root.get("endedAt"), cursorTimestamp));
           }
         }
       } else if (idAfter != null) {
-        // ID 기반 커서
+        // ID만
         if (isAscending) {
           predicates.add(criteriaBuilder.greaterThan(root.get("id"), idAfter));
         } else {

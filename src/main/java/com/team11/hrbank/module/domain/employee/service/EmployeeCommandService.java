@@ -295,10 +295,31 @@ public class EmployeeCommandService {
   }
 
   private String getIpAddress(HttpServletRequest request) throws UnknownHostException {
-    // X-Forwarded-For 헤더 확인 (프록시 서버 환경 고려)
-    String ipAddress = request.getHeader("X-Forwarded-For");
+    String ipAddress = null;
 
-    // 헤더가 없거나 비어있는 경우 직접 IP 주소 가져오기
+    //프록시 헤더 확인
+    String[] headers = {
+            "X-Forwarded-For",
+            "Proxy-Client-IP",
+            "WL-Proxy-Client-IP",
+            "HTTP_X_FORWARDED_FOR",
+            "HTTP_X_FORWARDED",
+            "HTTP_X_CLUSTER_CLIENT_IP",
+            "HTTP_CLIENT_IP",
+            "HTTP_FORWARDED_FOR",
+            "HTTP_FORWARDED",
+            "HTTP_VIA",
+            "REMOTE_ADDR"
+    };
+
+    for (String header : headers) {
+      ipAddress = request.getHeader(header);
+      if (ipAddress != null && !ipAddress.isEmpty() && !"unknown".equalsIgnoreCase(ipAddress)) {
+        break;
+      }
+    }
+
+    // 모든 헤더에서 실패하면 직접 IP 가져오기
     if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
       ipAddress = request.getRemoteAddr();
     }
@@ -312,6 +333,8 @@ public class EmployeeCommandService {
     if (ipAddress != null && ipAddress.contains(",")) {
       ipAddress = ipAddress.split(",")[0].trim();
     }
+
+    log.info("추출된 클라이언트 IP 주소: {}", ipAddress);
 
     return ipAddress;
   }
