@@ -131,85 +131,106 @@ public class DepartmentServiceImpl implements DepartmentService {
             String nameOrDescription,
             Long idAfter,
             String cursor,
-            Integer size,
+            int size,
             String sortField,
             String sortDirection) {
 
-        // 기본값 설정
-        if (size == null || size <= 0) {
-            size = 10; // 기본 페이지 크기
-        }
 
         if (sortField == null || sortField.isEmpty()) {
-            sortField = "establishedDate"; // API 명세에 맞게 기본 정렬 필드를 establishedDate로 수정
+            sortField = "establishedDate";
         }
 
         boolean isAscending = sortDirection == null || "asc".equalsIgnoreCase(sortDirection);
 
-        Department cursorDepartment = null;
+        // 전체 항목 수 계산
+        long totalDepartmentCount;
+        if (nameOrDescription != null && !nameOrDescription.isEmpty()) {
+            totalDepartmentCount = departmentRepository.countByNameOrDescriptionContaining(nameOrDescription);
+        } else {
+            totalDepartmentCount = departmentRepository.count();
+        }
 
+        // ========== 페이지 번호 및 나머지 항목 수 계산 개선 ==========
+        long processedItems = 0;
+        int pageNumber = 0;
+
+        // idAfter를 기반으로 이미 처리된 항목 수 계산
+        if (idAfter != null) {
+            // ID 기준 단순화된 계산 방식 (더 정확한 방법으로 대체)
+            pageNumber = (int)(idAfter / size);
+            processedItems = pageNumber * size;
+        }
+
+        // 실제 남은 항목 수 계산
+        long remainingItems = Math.max(0, totalDepartmentCount - processedItems);
+
+        // 이번 페이지에서 가져올 항목 수 결정
+        int effectiveSize = Math.max(1, Math.min(size, (int)remainingItems));
+
+        // 추가 항목을 가져와 다음 페이지 확인
+        int querySize = Math.max(1, Math.min(effectiveSize + 1, (int)remainingItems));
+
+        // 마지막 페이지 여부 결정
+        boolean isLastPage = remainingItems <= size;
+
+        // 커서 처리 (기존 코드 활용)
+        Department cursorDepartment = null;
         if (idAfter != null) {
             cursorDepartment = departmentRepository.findById(idAfter).orElse(null);
-        } else if (cursor != null && !cursor.isEmpty()) { //커서가 필드 값인 경우
+        } else if (cursor != null && !cursor.isEmpty()) {
+            // 기존 커서 처리 로직
             if ("name".equals(sortField)) {
+                // 이름 기반 커서 처리
                 List<Department> matchingDepts = departmentRepository.findByName(cursor);
                 if (!matchingDepts.isEmpty()) {
-                    //커서와 일치하는 부서 중 첫번째 항목 사용
                     cursorDepartment = matchingDepts.get(0);
                     idAfter = cursorDepartment.getId();
                 }
             } else if ("establishedDate".equals(sortField)) {
-                //설립일 기준 커서
+                // 날짜 기반 커서 처리
                 try {
                     LocalDate date = LocalDate.parse(cursor);
                     List<Department> matchingDepts = departmentRepository.findByEstablishedDate(date);
                     if (!matchingDepts.isEmpty()) {
-                        //설립일 같은 부서중 선택
                         cursorDepartment = matchingDepts.get(0);
                         idAfter = cursorDepartment.getId();
                     }
                 } catch (Exception e) {
-                    //날짜 파싱 실패 무시
+                    // 파싱 실패 시 무시
                 }
             } else {
+                // ID 기반 커서 처리
                 try {
                     idAfter = Long.parseLong(cursor);
                     cursorDepartment = departmentRepository.findById(idAfter).orElse(null);
                 } catch (NumberFormatException e) {
-                    //id 파싱 실패 무시
+                    // 파싱 실패 시 무시
                 }
             }
         }
 
+        // 정렬 및 페이징 설정
+        Pageable pageable = PageRequest.of(0, querySize,
+                Sort.by(isAscending ? Sort.Direction.ASC : Sort.Direction.DESC, sortField)
+                        .and(Sort.by(Sort.Direction.ASC, "name")));
 
-        // 부서명은 항상 오름차순으로 정렬 (설립일 내림차순일 때도)
-        Pageable pageable = PageRequest.of(0, size + 1, //다음 페이지 확인 위해 size+1
-                Sort.by(
-                                isAscending ? Sort.Direction.ASC : Sort.Direction.DESC, sortField)
-                        .and(Sort.by(Sort.Direction.ASC, "name"))
-        );
-
+        // 데이터 조회
         Page<Department> departmentPage;
-
-
-        // 입력받은 검색어가 있는 경우
         if (nameOrDescription != null && !nameOrDescription.isEmpty()) {
-
-            // idafter가 제공되었다면
             if (idAfter != null) {
-                if (isAscending) { //오름차순
+                if (isAscending) {
                     departmentPage = departmentRepository.searchWithCursorAsc(
                             idAfter, nameOrDescription, pageable);
-                } else { //내림차순
+                } else {
                     departmentPage = departmentRepository.searchWithCursorDesc(
                             idAfter, nameOrDescription, pageable);
                 }
-            } else { // idafter가 제공되지 않은 경우
+            } else {
+                // 커서 없이 일반 검색 메소드 사용
                 departmentPage = departmentRepository.searchByNameOrDescription(
                         nameOrDescription, pageable);
             }
-        } else { //입력받은 검색어가 없는 경우 모든 부서 조회
-            // 모든 부서 가져오기
+        } else {
             if (idAfter != null) {
                 if (isAscending) {
                     departmentPage = departmentRepository.findAllWithCursorAsc(idAfter, pageable);
@@ -221,42 +242,31 @@ public class DepartmentServiceImpl implements DepartmentService {
             }
         }
 
-        // 전체 부서 수 조회
-        long totalDepartmentCount;
-        if (nameOrDescription != null && !nameOrDescription.isEmpty()) {
-            // 검색어가 있는 경우, 해당 검색어에 맞는 전체 부서 수 조회
-            totalDepartmentCount = departmentRepository.countByNameOrDescriptionContaining(nameOrDescription);
-        } else {
-            // 검색어가 없는 경우, 전체 부서 수 조회
-            totalDepartmentCount = departmentRepository.count();
-        }
-
-
-        // 데이터베이스에서 가져온 부서 목록
+// 결과 처리
         List<Department> departments = new ArrayList<>(departmentPage.getContent());
 
-        boolean hasNext = departments.size() > size;
-        //다음 페이지 존재 여부 확인
-        if (departments.size() > size) {
-            departments.remove(size);
+// 존재하지 않는 요소를 제거하려고 시도하지 않도록 함
+        boolean hasNext = departments.size() > effectiveSize;
+        if (hasNext && departments.size() > effectiveSize) {
+            departments.remove(departments.size() - 1); // 마지막 요소 제거
         }
 
-      // 빈 결과 처리 추가
-      if (departments.isEmpty()) {
-        return CursorPageResponse.of(
-                List.of(),
-                null,
-                null,
-                size,
-                totalDepartmentCount,
-                false
+        // 빈 결과 처리
+        if (departments.isEmpty()) {
+            return CursorPageResponse.of(
+                    List.of(),
+                    null,
+                    null,
+                    effectiveSize,
+                    totalDepartmentCount,
+                    false
+            );
+        }
 
-        );
-      }
-
-        //정렬 처리
+        // 메모리 내 정렬 (필요한 경우)
         sortDepartments(departments, sortField, isAscending);
 
+        // DTO 변환
         List<DepartmentDto> departmentDtos = departments.stream()
                 .map(department -> {
                     Long employeeCount = employeeRepository.countByDepartmentId(department.getId());
@@ -264,13 +274,15 @@ public class DepartmentServiceImpl implements DepartmentService {
                 })
                 .toList();
 
+        // 다음 페이지 커서 설정
         String nextCursorValue = null;
         Long nextIdAfter = null;
-        if (!departments.isEmpty()) {
-            DepartmentDto lastItem = departmentDtos.get(departments.size() - 1);
+
+        if (!departments.isEmpty() && hasNext) {
+            DepartmentDto lastItem = departmentDtos.get(departmentDtos.size() - 1);
             nextIdAfter = lastItem.id();
 
-            //정렬 필드에 따라 커서 값 설정
+            // 정렬 필드에 따라 커서 값 설정
             if ("name".equals(sortField)) {
                 nextCursorValue = lastItem.name();
             } else if ("establishedDate".equals(sortField)) {
@@ -280,11 +292,12 @@ public class DepartmentServiceImpl implements DepartmentService {
             }
         }
 
+        // 응답 생성
         return CursorPageResponse.of(
                 departmentDtos,
                 hasNext ? nextCursorValue : null,
                 hasNext ? nextIdAfter : null,
-                size,
+                departments.size(), // 실제 반환하는 항목 수
                 totalDepartmentCount,
                 hasNext
         );

@@ -29,7 +29,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   Page<Department> searchByNameOrDescription(
       @Param("search") String search, Pageable pageable);
 
-  @Query("SELECT d FROM Department d WHERE " +
+  @Query("SELECT COUNT(d) FROM Department d WHERE " +
           "(LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
           "LOWER(d.description) LIKE LOWER(CONCAT('%', :search, '%')))")
   long countByNameOrDescriptionContaining(@Param("search") String search);
