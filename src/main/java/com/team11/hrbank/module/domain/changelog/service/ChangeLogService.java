@@ -12,7 +12,7 @@ import java.util.List;
 public interface ChangeLogService {
   CursorPageResponse<ChangeLogDto> getAllChangeLogs(
       String employeeNumber, HistoryType type, String memo,
-      InetAddress ipAddress, Instant atFrom, Instant atTo,
+      String ipAddress, Instant atFrom, Instant atTo,
       Long idAfter, String cursor, int size,
       String sortField, String sortDirection);
 

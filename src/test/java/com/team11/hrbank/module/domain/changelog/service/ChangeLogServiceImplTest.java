@@ -137,7 +137,8 @@ class ChangeLogServiceImplTest {
     String employeeNumber = "EMP-2025-001";
     HistoryType type = HistoryType.UPDATED;
     String memo = "변경";
-    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
+//    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
+    String ipAddress ="127.0.0.1";
     Instant atFrom = Instant.now().minus(30, ChronoUnit.DAYS);
     Instant atTo = Instant.now();
     Long idAfter = null;
@@ -284,7 +285,7 @@ class ChangeLogServiceImplTest {
     String employeeNumber = "EMP-2025-001";
     HistoryType type = HistoryType.UPDATED;
     String memo = "변경";
-    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
+//    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
     Instant atFrom = Instant.now().minus(30, ChronoUnit.DAYS);
     Instant atTo = Instant.now();
     Long idAfter = 1L;
@@ -303,7 +304,7 @@ class ChangeLogServiceImplTest {
         .thenReturn(List.of(changeLogDtos.get(1)));
 
     // when
-    CursorPageResponse<ChangeLogDto> result = changeLogService.getAllChangeLogs(employeeNumber, type, memo, ipAddress, atFrom, atTo,
+    CursorPageResponse<ChangeLogDto> result = changeLogService.getAllChangeLogs(employeeNumber, type, memo, "127.0.0.1", atFrom, atTo,
         null, cursor, size, sortField, sortDirection);
 
     // then
@@ -333,7 +334,7 @@ class ChangeLogServiceImplTest {
     assertThrows(IllegalArgumentException.class, () -> {
       // when
       changeLogService.getAllChangeLogs(
-          employeeNumber, type, memo, ipAddress, atFrom, atTo,
+          employeeNumber, type, memo, "127.0.0.1", atFrom, atTo,
           idAfter, cursor, size, sortField, sortDirection);
     });
   }

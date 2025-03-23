@@ -28,10 +28,11 @@ public record CursorPageResponse<T>(
           String cursorValue,
           Long lastId,
           int size,
-          long totalElements){
+          long totalElements,
+          boolean hasNext){
 
-    // 다음 페이지가 있는지 판단 (size+1개를 가져왔다면 추가적인 데이터가 있다는 의미)
-    boolean hasNext = !content.isEmpty() && totalElements > size;
+    // 마지막 페이지인지
+//    boolean hasNext = !content.isEmpty() && cursorValue != null;
 
     return new CursorPageResponse<>(
             content,
@@ -42,22 +43,6 @@ public record CursorPageResponse<T>(
             hasNext
     );
   }
-//  public static <T> CursorPageResponse<T> of(List<T> content, Long lastId, int size, long totalElements) {
-//    boolean hasNext =
-//        !content.isEmpty() && content.size() == size && totalElements > content.size();
-//    String nextCursor = hasNext ?
-//        java.util.Base64.getEncoder().encodeToString(("{\"id\":" + lastId + "}").getBytes()) :
-//        null;
-//
-//    return new CursorPageResponse<>(
-//        content,
-//        nextCursor,
-//        hasNext ? lastId : null,
-//        size,
-//        totalElements,
-//        hasNext
-//    );
-//  }
 
   /**
    * 커서 문자열에서 ID 추출

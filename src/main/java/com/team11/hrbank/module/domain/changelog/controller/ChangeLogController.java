@@ -42,11 +42,10 @@ public class ChangeLogController implements ChangeLogApi {
       @RequestParam(defaultValue = "desc") String sortDirection) //정렬 방향 (asc, desc)
       throws UnknownHostException {
 
-    InetAddress inetAddress = ipAddress != null && !ipAddress.isEmpty() ? InetAddress.getByName(ipAddress) : null;
 
     CursorPageResponse<ChangeLogDto> response = changeLogService.getAllChangeLogs(
         employeeNumber,
-        type, memo, inetAddress, atFrom, atTo,
+        type, memo, ipAddress, atFrom, atTo,
         idAfter, cursor, size, sortField, sortDirection);
 
     return ResponseEntity.ok(response);
