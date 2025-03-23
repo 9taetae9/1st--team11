@@ -83,59 +83,67 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
       QEmployee employee) {
 
     boolean isAsc = "asc".equalsIgnoreCase(sortDirection);
-    BooleanExpression cursorCondition;
 
-    if (cursor != null) {
+    //커서 값이 제공 된 경우
+    if (cursor != null && !cursor.isEmpty()) {
       switch (sortField) {
         case "name":
-          cursorCondition = isAsc ? employee.name.gt(cursor) : employee.name.lt(cursor);
-          break;
+          return isAsc ? employee.name.gt(cursor) : employee.name.lt(cursor);
         case "employeeNumber":
-          cursorCondition =
-              isAsc ? employee.employeeNumber.gt(cursor) : employee.employeeNumber.lt(cursor);
-          break;
+          return isAsc ? employee.employeeNumber.gt(cursor) : employee.employeeNumber.lt(cursor);
         case "hireDate":
-          LocalDate hireDate = LocalDate.parse(cursor);
-          cursorCondition = isAsc ? employee.hireDate.gt(hireDate) : employee.hireDate.lt(hireDate);
-          break;
-        default:
-          throw new IllegalArgumentException("sortField(" + sortField + ")는 존재하지 않습니다.");
+          try {
+            LocalDate hireDate = LocalDate.parse(cursor);
+            return isAsc ? employee.hireDate.gt(hireDate) : employee.hireDate.lt(hireDate);
+          }catch (Exception e) {
+            return employee.id.gt(0L); // 날짜 파싱 실패
+          }
+        default: //이름 정렬 (기본)
+          return isAsc ? employee.name.gt(cursor) : employee.name.lt(cursor);
       }
-    } else if (idAfter != null) {
+    }
+
+    // idAfter가 제공된 경우 (id 기반 페이지네이션)
+    if (idAfter != null) {
       Employee targetEmployee = queryFactory.selectFrom(employee)
           .where(employee.id.eq(idAfter))
           .fetchOne();
 
       if (targetEmployee == null) {
-        throw new IllegalArgumentException("해당 idAfter에 해당하는 Employee를 찾을 수 없습니다.");
+//        throw new IllegalArgumentException("해당 idAfter에 해당하는 Employee를 찾을 수 없습니다.");
+        return employee.id.gt(0L);
       }
 
       // 해당 Employee의 필드를 기준으로 비교
       switch (sortField) {
+        // idAfter의 Employee의 name을 기준으로 비교
         case "name":
-          // idAfter의 Employee의 name을 기준으로 비교
-          cursorCondition = isAsc ? employee.name.gt(targetEmployee.getName())
+          BooleanExpression nameExpr = isAsc ? employee.name.gt(targetEmployee.getName())
               : employee.name.lt(targetEmployee.getName());
-          break;
+
+          // 이름이 같은 경우 ID로 구분
+          return nameExpr.or(
+                  employee.name.eq(targetEmployee.getName())
+                          .and(isAsc ? employee.id.gt(idAfter) : employee.id.lt(idAfter))
+          );
         case "employeeNumber":
-          cursorCondition = isAsc ? employee.employeeNumber.gt(targetEmployee.getEmployeeNumber())
+              return isAsc ? employee.employeeNumber.gt(targetEmployee.getEmployeeNumber())
               : employee.employeeNumber.lt(targetEmployee.getEmployeeNumber());
-          break;
         case "hireDate":
           LocalDate hireDate = targetEmployee.getHireDate();
-          cursorCondition =
-              isAsc ? employee.hireDate.gt(hireDate) : employee.hireDate.lt(hireDate);
-          break;
+          BooleanExpression dateExpr = isAsc ? employee.hireDate.gt(hireDate) : employee.hireDate.lt(hireDate);
+          return dateExpr.or(
+                  employee.hireDate.eq(targetEmployee.getHireDate())
+                          .and(isAsc ? employee.id.gt(idAfter) : employee.id.lt(idAfter))
+          );
         default:
-          throw new IllegalArgumentException("sortField(" + sortField + ")는 존재하지 않습니다.");
+          return isAsc ? employee.name.gt(cursor) : employee.name.lt(cursor);
+//          throw new IllegalArgumentException("sortField(" + sortField + ")는 존재하지 않습니다.");
       }
 
-    } else {
-      // 첫 페이지의 경우 (cursor와 idAfter가 없을 때)
-      cursorCondition = employee.id.gt(0L);  // id > 0 으로 설정
     }
 
-    return cursorCondition;
+    return employee.id.gt(0L);
   }
 
   private OrderSpecifier<?> createOrderSpecifier(String sortField, String sortDirection,
