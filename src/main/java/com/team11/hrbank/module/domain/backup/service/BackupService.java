@@ -157,6 +157,9 @@ public class BackupService {
         Long idAfter, String cursor, int size,
         String sortField, String sortDirection) {
 
+        // 정렬 필드 매핑
+        String entitySortField = mapSortField(sortField);
+
         //커서 값 처리
         Instant cursorTimeStamp = null;
 
@@ -186,9 +189,6 @@ public class BackupService {
             }
         }
 
-        // 정렬 필드 매핑
-        String entitySortField = mapSortField(sortField);
-
         // 정렬 방향 설정
         Sort sort = "DESC".equalsIgnoreCase(sortDirection) ?
             Sort.by(entitySortField).descending() :
@@ -197,9 +197,12 @@ public class BackupService {
         // 페이징 설정
         Pageable pageable = PageRequest.of(0, size + 1, sort);
 
+        // 전체 개수 계산 (커서 조건 제외)
         long totalElements = backupHistoryRepository.count(
-                BackupSpecifications.withCriteria(worker, status, startedAtFrom, startedAtTo,
-                        null, null, entitySortField, sortDirection));
+                BackupSpecifications.withCriteria(
+                        worker, status, startedAtFrom, startedAtTo, null, null, entitySortField, sortDirection));
+        log.debug("전체 데이터 수: {}", totalElements);
+
         // 백업 이력 조회
         Page<BackupHistory> backupHistoriesPage = backupHistoryRepository.findAll(
                 BackupSpecifications.withCriteria(worker,status, startedAtFrom, startedAtTo, idAfter,
@@ -210,7 +213,7 @@ public class BackupService {
 
         // 다음 페이지 존재 여부 확인
         boolean hasNext = backupHistories.size() > size;
-        if (hasNext) {
+        if (hasNext && !backupHistories.isEmpty()) {
             backupHistories.remove(size);
         }
 
@@ -222,7 +225,7 @@ public class BackupService {
                     null,
                     size,
                     totalElements,
-                    hasNext
+                    false
             );
         }
 
@@ -234,22 +237,33 @@ public class BackupService {
         BackupHistory lastItem = backupHistories.get(backupHistories.size() - 1);
         Long lastId = lastItem.getId();
 
-        //정렬 필드에 따라 커서 값 설정
-        String nextCursorValue;
-        if("startAt".equals(sortField) || "startAt".equals(sortField)) {
-            nextCursorValue = lastItem.getStartAt().toString();
-        }else if("endedAt".equals(sortField) || "endedAt".equals(sortField)) {
-            nextCursorValue = lastItem.getEndedAt() != null ? lastItem.getEndedAt().toString() : lastItem.getId().toString();
-        }else {
-            nextCursorValue = lastId.toString();
-        }
 
+        // 정렬 필드에 따라 커서 값 설정
+        String nextCursor;
+        if ("startAt".equals(entitySortField)) {
+            // Base64 인코딩 사용
+            nextCursor = java.util.Base64.getEncoder()
+                    .encodeToString(("{\"id\":" + lastId + "}").getBytes());
+            log.debug("시작 시간 기준 Base64 커서 생성: {}", nextCursor);
+        } else if ("endedAt".equals(entitySortField)) {
+            if (lastItem.getEndedAt() != null) {
+                nextCursor = java.util.Base64.getEncoder()
+                        .encodeToString(("{\"id\":" + lastId + "}").getBytes());
+                log.debug("종료 시간 기준 Base64 커서 생성: {}", nextCursor);
+            } else {
+                nextCursor = lastId.toString();
+                log.debug("종료 시간 없음, ID 커서 사용: {}", nextCursor);
+            }
+        } else {
+            nextCursor = lastId.toString();
+            log.debug("기본 ID 커서 사용: {}", nextCursor);
+        }
 
         // 커서 페이지 응답 생성
         return CursorPageResponse.of(
                 backupDtos,
-                nextCursorValue,
-                lastId,
+                hasNext ? nextCursor : null,
+                hasNext ? lastId : null,
                 size,
                 totalElements,
                 hasNext
@@ -260,6 +274,18 @@ public class BackupService {
         if (sortField == null || sortField.equals("startedAt")) {
             return "startAt";
         }
-        return sortField;
+        switch (sortField) {
+            case "startedAt":
+                return "startAt";
+            case "endedAt":
+                return "endedAt";
+            case "startAt":
+            case "endAt":
+            case "status":
+            case "worker":
+                return sortField;
+            default:
+                return "startAt"; // 기본값
+        }
     }
 }
