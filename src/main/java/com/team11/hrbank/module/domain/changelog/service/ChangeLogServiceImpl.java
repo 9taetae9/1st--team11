@@ -56,26 +56,72 @@ public class ChangeLogServiceImpl implements ChangeLogService{
         ? Direction.DESC : Direction.ASC;
 
     //페이징 및 정렬 설정
-    PageRequest pageRequest = PageRequest.of(0, size, Sort.by(direction, dbField));
+    PageRequest pageRequest = PageRequest.of(0, size+1, Sort.by(direction, dbField));
 
-    // Specification 사용
+    Instant cursorAt = null;
+    String cursorIpAddress = null;
+
+    if(cursor != null && !cursor.isEmpty()){
+      if("at".equals(sortField)){
+        try{
+          //at 필드 기준 커서인 경우
+          cursorAt = Instant.parse(cursor);
+        }catch (Exception e){
+          //파싱 실패시 idAfter 기반으로 동작
+        }
+      }else if("ipAddress".equals(sortField)){
+        //ip 주소 기반 커서인 경우 (프로토타입에서는 id 값을 커서로 사용하는 것으로 보임)
+        try {
+          idAfter = Long.parseLong(cursor);
+        }catch (NumberFormatException e){
+          //변환 실패시 무시
+        }
+      }
+    }
+
+
+    // Specification 사용 - 커서 조건 포함
     Specification<ChangeLog> spec = ChangeLogSpecification.withFilters(
-        employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter);
+            employeeNumber, type, memo, ipAddress, atFrom, atTo, idAfter,
+            cursorAt, cursorIpAddress, sortField, sortDirection);
 
     Page<ChangeLog> page = changeLogRepository.findAll(spec, pageRequest);
-
-    // 응답 생성
     List<ChangeLog> content = page.getContent();
+
+    boolean hasNext = content.size() > size;
+
+    //다음 페이지 있으면 마지막 페이지 제거
+    if (hasNext) {
+      content.remove(size);
+    }
+
     List<ChangeLogDto> dtoList = changeLogMapper.toDtoList(content);
 
-    // 마지막 요소 ID 추출
-    Long lastId = !content.isEmpty() ? content.get(content.size() - 1).getId() : null;
+    //커서 값과 nextIdAfter 설정
+    String nextCursor = null;
+    Long nextIdAfter = null;
 
+    if (!content.isEmpty()) {
+      ChangeLog lastItem = content.get(content.size() - 1);
+      nextIdAfter = lastItem.getId();
+
+      //정렬 필드에 따라 커서 값 설정
+      if("at".equals(sortField)){
+        nextCursor = lastItem.getCreatedAt().toString();
+      }else if("ipAddress".equals(sortField)){
+        // TODO
+        //프로토타입 기준 id를 커서로 적용? (일단 ip를 커서로 적용 후 오류 발생시 프로토타입 대로 가기)
+        nextCursor = lastItem.getIpAddress().toString();
+      }
+    }
+
+    long totalElements = getChangeLogsCount(atFrom, atTo);
     return CursorPageResponse.of(
         dtoList,
-        lastId,
+        nextCursor,
+        nextIdAfter,
         size,
-        page.getTotalElements()
+        totalElements
     );
   }
 

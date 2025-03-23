@@ -19,7 +19,11 @@ public class ChangeLogSpecification {
       InetAddress ipAddress,
       Instant fromDate,
       Instant toDate,
-      Long idAfter) {
+      Long idAfter,
+      Instant cursorAt,
+      String cursorIpAddress,
+      String sortField,
+      String sortDirection) {
 
     return (root, query, criteriaBuilder) -> {
       List<Predicate> predicates = new ArrayList<>();
@@ -50,6 +54,31 @@ public class ChangeLogSpecification {
 
       if (idAfter != null) {
         predicates.add(criteriaBuilder.lessThan(root.get("id"), idAfter));
+      }
+
+      boolean isAsc = !"desc".equalsIgnoreCase(sortDirection);
+
+      if ("at".equals(sortField) && cursorAt != null) {
+        // 시간 기준 커서
+        if (isAsc) {
+          predicates.add(criteriaBuilder.greaterThan(root.get("createdAt"), cursorAt));
+        } else {
+          predicates.add(criteriaBuilder.lessThan(root.get("createdAt"), cursorAt));
+        }
+      } else if ("ipAddress".equals(sortField) && cursorIpAddress != null) {
+        // IP 주소 기준 커서 (String 비교)
+        if (isAsc) {
+          predicates.add(criteriaBuilder.greaterThan(root.get("ipAddress"), cursorIpAddress));
+        } else {
+          predicates.add(criteriaBuilder.lessThan(root.get("ipAddress"), cursorIpAddress));
+        }
+      } else if (idAfter != null) {
+        // 프로토타입 기준 - IP 주소 정렬에서는 ID를 커서로 사용하는 것으로 보임
+        if (isAsc) {
+          predicates.add(criteriaBuilder.greaterThan(root.get("id"), idAfter));
+        } else {
+          predicates.add(criteriaBuilder.lessThan(root.get("id"), idAfter));
+        }
       }
 
       return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
