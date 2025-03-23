@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +80,7 @@ public class EmployeeCommandService {
     employeeRepository.save(employee);
 
     // 직원 변경 이력 생성
-    InetAddress ipAddress = getIpAddress(request);
+    String ipAddress = getIpAddress(request);
     ChangeLog changeLog = ChangeLog.create(employee,
         employee.getEmployeeNumber(),
         employeeCreateRequest.memo(),
@@ -104,7 +103,7 @@ public class EmployeeCommandService {
     List<DiffEntry> changes = new ArrayList<>();
     boolean hasChanges = false;
 
-    InetAddress ipAddress = getIpAddress(request);
+    String ipAddress = getIpAddress(request);
 
     // 이름 변경
     if (employeeUpdateRequest.name() != null && !employeeUpdateRequest.name()
@@ -250,12 +249,12 @@ public class EmployeeCommandService {
 
     // 삭제 이력 생성 (employee 참조 없이 처리)
     try {
-      InetAddress ipAddress;
+      String ipAddress;
       try {
         ipAddress = getIpAddress(request);
       } catch (UnknownHostException e) {
         log.warn("IP 주소 조회 실패, 기본값 사용: {}", e.getMessage());
-        ipAddress = InetAddress.getByName("0.0.0.0");
+        ipAddress = "0.0.0.0";
       }
 
       // employee 파라미터 없이 처리
@@ -295,12 +294,26 @@ public class EmployeeCommandService {
     }
   }
 
-  private InetAddress getIpAddress(HttpServletRequest request) throws UnknownHostException {
-    String ipAddress = request.getRemoteAddr();
-    if (ipAddress == null || ipAddress.isEmpty() || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
-      return InetAddress.getByName("127.0.0.1");
+  private String getIpAddress(HttpServletRequest request) throws UnknownHostException {
+    // X-Forwarded-For 헤더 확인 (프록시 서버 환경 고려)
+    String ipAddress = request.getHeader("X-Forwarded-For");
+
+    // 헤더가 없거나 비어있는 경우 직접 IP 주소 가져오기
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getRemoteAddr();
     }
-    return InetAddress.getByName(ipAddress);
+
+    // 로컬호스트 주소 처리
+    if (ipAddress == null || ipAddress.isEmpty() || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
+      ipAddress = "127.0.0.1";
+    }
+
+    // 쉼표로 구분된 여러 IP 주소가 있는 경우 첫 번째 주소만 사용
+    if (ipAddress != null && ipAddress.contains(",")) {
+      ipAddress = ipAddress.split(",")[0].trim();
+    }
+
+    return ipAddress;
   }
 
 }

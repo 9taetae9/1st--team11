@@ -5,19 +5,14 @@ import com.team11.hrbank.module.domain.changelog.HistoryType;
 import com.team11.hrbank.module.domain.changelog.dto.ChangeLogDto;
 import com.team11.hrbank.module.domain.changelog.dto.DiffDto;
 import com.team11.hrbank.module.domain.changelog.service.ChangeLogService;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.time.Instant;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/change-logs")
@@ -40,7 +35,7 @@ public class ChangeLogController implements ChangeLogApi {
       @RequestParam(defaultValue = "30") int size, //페이지 크기
       @RequestParam(defaultValue = "at") String sortField, //정렬 필드(ipAddress, at)
       @RequestParam(defaultValue = "desc") String sortDirection) //정렬 방향 (asc, desc)
-      throws UnknownHostException {
+  {
 
 
     CursorPageResponse<ChangeLogDto> response = changeLogService.getAllChangeLogs(

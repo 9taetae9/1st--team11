@@ -20,7 +20,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.net.InetAddress;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -218,7 +217,7 @@ public class ChangeLogServiceImpl implements ChangeLogService{
     // 패턴 문자열 구성
     String employeeNumberPattern = employeeNumber != null ? "%" + employeeNumber + "%" : "%";
     String memoPattern = memo != null ? "%" + memo + "%" : "%";
-    String ipAddressPattern = ipAddress != null ? ipAddress + "%" : "%";
+    String ipAddressPattern = ipAddress != null ? "%" + ipAddress + "%" : "%";
 
     // 총 개수 계산
     long totalElements = changeLogRepository.countByFilters(
