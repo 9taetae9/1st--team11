@@ -3,18 +3,12 @@ package com.team11.hrbank.module.domain.employee;
 import com.team11.hrbank.module.domain.UpdatableEntity;
 import com.team11.hrbank.module.domain.department.Department;
 import com.team11.hrbank.module.domain.file.File;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.time.LocalDate;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import org.hibernate.annotations.ColumnDefault;
+
+import java.time.LocalDate;
 
 @Getter
 @Entity

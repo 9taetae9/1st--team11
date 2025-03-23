@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
-  boolean existsByName(String name);
 
   // 커서 기반 페이지네이션 (ID 이후) - 오름차순
   @Query("SELECT d FROM Department d WHERE d.id > :id ORDER BY d.establishedDate ASC, d.name ASC")
@@ -27,6 +29,11 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   Page<Department> searchByNameOrDescription(
       @Param("search") String search, Pageable pageable);
 
+  @Query("SELECT d FROM Department d WHERE " +
+          "(LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+          "LOWER(d.description) LIKE LOWER(CONCAT('%', :search, '%')))")
+  long countByNameOrDescriptionContaining(@Param("search") String search);
+
   // 오름차순 + 커서 + 검색어 (이름 또는 설명)
   @Query("SELECT d FROM Department d WHERE " +
       "d.id > :id AND (LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -42,4 +49,9 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       "ORDER BY d.establishedDate DESC, d.name DESC")
   Page<Department> searchWithCursorDesc(
       @Param("id") Long id, @Param("search") String search, Pageable pageable);
+
+  @Query("SELECT d FROM Department d WHERE d.establishedDate = :date")
+  List<Department> findByEstablishedDate(@Param("date") LocalDate date);
+
+  List<Department> findByName(String cursor);
 }

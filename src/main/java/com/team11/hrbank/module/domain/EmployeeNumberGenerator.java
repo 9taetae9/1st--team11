@@ -1,8 +1,9 @@
 package com.team11.hrbank.module.domain;
 
+import org.springframework.stereotype.Component;
+
 import java.security.SecureRandom;
 import java.time.LocalDate;
-import org.springframework.stereotype.Component;
 
 @Component
 public class EmployeeNumberGenerator {

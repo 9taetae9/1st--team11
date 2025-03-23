@@ -1,13 +1,5 @@
 package com.team11.hrbank.module.domain.changelog.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
 import com.team11.hrbank.module.common.dto.CursorPageResponse;
 import com.team11.hrbank.module.common.exception.ResourceNotFoundException;
 import com.team11.hrbank.module.domain.changelog.ChangeLog;
@@ -20,14 +12,6 @@ import com.team11.hrbank.module.domain.changelog.mapper.ChangeLogMapper;
 import com.team11.hrbank.module.domain.changelog.mapper.DiffMapper;
 import com.team11.hrbank.module.domain.changelog.repository.ChangeLogRepository;
 import com.team11.hrbank.module.domain.employee.Employee;
-import java.lang.reflect.Field;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +23,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -139,7 +137,8 @@ class ChangeLogServiceImplTest {
     String employeeNumber = "EMP-2025-001";
     HistoryType type = HistoryType.UPDATED;
     String memo = "변경";
-    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
+//    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
+    String ipAddress ="127.0.0.1";
     Instant atFrom = Instant.now().minus(30, ChronoUnit.DAYS);
     Instant atTo = Instant.now();
     Long idAfter = null;
@@ -286,7 +285,7 @@ class ChangeLogServiceImplTest {
     String employeeNumber = "EMP-2025-001";
     HistoryType type = HistoryType.UPDATED;
     String memo = "변경";
-    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
+//    InetAddress ipAddress = InetAddress.getByName("127.0.0.1");
     Instant atFrom = Instant.now().minus(30, ChronoUnit.DAYS);
     Instant atTo = Instant.now();
     Long idAfter = 1L;
@@ -305,7 +304,7 @@ class ChangeLogServiceImplTest {
         .thenReturn(List.of(changeLogDtos.get(1)));
 
     // when
-    CursorPageResponse<ChangeLogDto> result = changeLogService.getAllChangeLogs(employeeNumber, type, memo, ipAddress, atFrom, atTo,
+    CursorPageResponse<ChangeLogDto> result = changeLogService.getAllChangeLogs(employeeNumber, type, memo, "127.0.0.1", atFrom, atTo,
         null, cursor, size, sortField, sortDirection);
 
     // then
@@ -335,7 +334,7 @@ class ChangeLogServiceImplTest {
     assertThrows(IllegalArgumentException.class, () -> {
       // when
       changeLogService.getAllChangeLogs(
-          employeeNumber, type, memo, ipAddress, atFrom, atTo,
+          employeeNumber, type, memo, "127.0.0.1", atFrom, atTo,
           idAfter, cursor, size, sortField, sortDirection);
     });
   }

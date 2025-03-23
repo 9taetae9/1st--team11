@@ -37,16 +37,15 @@ public class ChangeLogController implements ChangeLogApi {
       @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Instant atTo,
       @RequestParam(required = false) Long idAfter, //이전 페이지 마지막 요소 id
       @RequestParam(required = false) String cursor, // 이전 페이지의 마지막 id
-      @RequestParam(defaultValue = "10") int size, //페이지 크기
+      @RequestParam(defaultValue = "30") int size, //페이지 크기
       @RequestParam(defaultValue = "at") String sortField, //정렬 필드(ipAddress, at)
       @RequestParam(defaultValue = "desc") String sortDirection) //정렬 방향 (asc, desc)
       throws UnknownHostException {
 
-    InetAddress inetAddress = ipAddress != null ? InetAddress.getByName(ipAddress) : null;
 
     CursorPageResponse<ChangeLogDto> response = changeLogService.getAllChangeLogs(
         employeeNumber,
-        type, memo, inetAddress, atFrom, atTo,
+        type, memo, ipAddress, atFrom, atTo,
         idAfter, cursor, size, sortField, sortDirection);
 
     return ResponseEntity.ok(response);

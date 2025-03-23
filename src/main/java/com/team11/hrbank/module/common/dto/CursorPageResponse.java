@@ -23,20 +23,24 @@ public record CursorPageResponse<T>(
    * //리턴시 사용 예시
    * return CursorPageResponse.of(dtoList, lastId, size, page.getTotalElements());
    */
-  public static <T> CursorPageResponse<T> of(List<T> content, Long lastId, int size, long totalElements) {
-    boolean hasNext =
-        !content.isEmpty() && content.size() == size && totalElements > content.size();
-    String nextCursor = hasNext ?
-        java.util.Base64.getEncoder().encodeToString(("{\"id\":" + lastId + "}").getBytes()) :
-        null;
+  public static <T> CursorPageResponse<T> of(
+          List<T> content,
+          String cursorValue,
+          Long lastId,
+          int size,
+          long totalElements,
+          boolean hasNext){
+
+    // 마지막 페이지인지
+//    boolean hasNext = !content.isEmpty() && cursorValue != null;
 
     return new CursorPageResponse<>(
-        content,
-        nextCursor,
-        hasNext ? lastId : null,
-        size,
-        totalElements,
-        hasNext
+            content,
+            hasNext ? cursorValue : null,
+            hasNext ? lastId : null,
+            size,
+            totalElements,
+            hasNext
     );
   }
 
@@ -56,8 +60,15 @@ public record CursorPageResponse<T>(
       return null;
     }
 
-    String decoded = new String(Base64.getDecoder().decode(cursor));
-    return Long.parseLong(decoded.replace("{\"id\":", "").replace("}", ""));
+    try {
+      // Base64 인코딩된 ID일 경우 디코딩 시도
+      String decoded = new String(java.util.Base64.getDecoder().decode(cursor));
+      return Long.parseLong(decoded.replace("{\"id\":", "").replace("}", ""));
+    } catch (Exception e) {
+      // 디코딩에 실패한 경우 (프로토타입 방식의 커서인 경우), null 반환
+      return null;
+    }
+
   }
 
 }

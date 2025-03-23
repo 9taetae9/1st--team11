@@ -2,20 +2,12 @@ package com.team11.hrbank.module.domain.changelog;
 
 import com.team11.hrbank.module.domain.BaseEntity;
 import com.team11.hrbank.module.domain.employee.Employee;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import java.net.InetAddress;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.net.InetAddress;
 
 @Getter
 @Entity

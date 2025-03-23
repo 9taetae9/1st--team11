@@ -10,14 +10,15 @@ import com.team11.hrbank.module.domain.employee.dto.EmployeeTrendDto;
 import com.team11.hrbank.module.domain.employee.mapper.EmployeeMapper;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepository;
 import com.team11.hrbank.module.domain.employee.repository.EmployeeRepositoryCustom;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -56,9 +57,6 @@ public class EmployeeQueryService {
       String sortField,
       String sortDirection
   ) {
-    if (cursor != null && !cursor.isEmpty() && idAfter == null) {
-      idAfter = CursorPageResponse.extractIdFromCursor(cursor);
-    }
 
     List<Employee> employees = employeeRepositoryCustom.findEmployeesByConditions(
         nameOrEmail,
@@ -74,22 +72,49 @@ public class EmployeeQueryService {
         sortField,
         sortDirection);
 
-    Long lastId = null;
-
-    if (employees.size() > size) {
-      // size + 1로 조회했기 때문에, 마지막 직원은 실제 목록에 포함되지 않는다.
-      employees.remove(employees.size() - 1);  // 마지막 직원 제거
+    // 다음 페이지가 있으면 마지막 아이템 제거
+    boolean hasNext = employees.size() > size;
+    if(hasNext) {
+      employees.remove(size);
     }
 
-    if (!employees.isEmpty()) {
-      lastId = employees.get(employees.size() - 1).getId();
+    if (employees.isEmpty()) {
+      return new CursorPageResponse<>(
+              List.of(),
+              null,
+              null,
+              size,
+              getEmployeeCount(status, hireDateFrom, hireDateTo),
+              false
+      );
+    }
+
+
+    //마지막 직원 정보 가져오기
+    Employee lastEmployee = employees.get(employees.size() - 1);
+    Long lastId = lastEmployee.getId();
+
+    //정렬 필드에 따라 커서 값 설정
+    String nextCursorValue;
+    switch (sortField) {
+      case "name":
+        nextCursorValue = lastEmployee.getName();
+        break;
+      case "employeeNumber":
+        nextCursorValue = lastEmployee.getEmployeeNumber();
+        break;
+      case "hireDate":
+        nextCursorValue = lastEmployee.getHireDate().toString();
+        break;
+      default:
+        nextCursorValue = lastEmployee.getName();
     }
 
     List<EmployeeDto> employeeDtos = employees.stream().map(employeeMapper::toDto).toList();
 
     long totalCount = getEmployeeCount(status, hireDateFrom, hireDateTo);
 
-    return CursorPageResponse.of(employeeDtos, lastId, size, totalCount);
+    return CursorPageResponse.of(employeeDtos, nextCursorValue, hasNext ? lastId : null, size, totalCount, hasNext);
   }
 
   // 직원 분포 조회

@@ -11,9 +11,6 @@ import com.team11.hrbank.module.domain.backup.service.data.BackupDataService;
 import com.team11.hrbank.module.domain.backup.service.file.BackupFileStorageService;
 import com.team11.hrbank.module.domain.file.File;
 import com.team11.hrbank.module.domain.file.service.FileService;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -155,9 +157,33 @@ public class BackupService {
         Long idAfter, String cursor, int size,
         String sortField, String sortDirection) {
 
-        // 커서에서 ID 추출
-        if (cursor != null && !cursor.isEmpty() && idAfter == null) {
-            idAfter = CursorPageResponse.extractIdFromCursor(cursor);
+        //커서 값 처리
+        Instant cursorTimeStamp = null;
+
+        if (cursor != null && !cursor.isEmpty()) {
+            if ("startedAt".equals(sortField) || "startAt".equals(sortField) ||
+                    "endedAt".equals(sortField) || "endAt".equals(sortField)) {
+                try {
+                    // 타임스탬프 커서
+                    cursorTimeStamp = Instant.parse(cursor);
+                } catch (Exception e) {
+                    // 타임스탬프 파싱 실패 시 ID로 시도
+                    try {
+                        idAfter = Long.parseLong(cursor);
+                    } catch (NumberFormatException ex) {
+                        // 모두 실패 시 Base64 디코딩 시도
+                        idAfter = CursorPageResponse.extractIdFromCursor(cursor);
+                    }
+                }
+            } else {
+                // ID 기반 커서로 시도
+                try {
+                    idAfter = Long.parseLong(cursor);
+                } catch (NumberFormatException ex) {
+                    // 파싱 실패 시 Base64 디코딩
+                    idAfter = CursorPageResponse.extractIdFromCursor(cursor);
+                }
+            }
         }
 
         // 정렬 필드 매핑
@@ -169,38 +195,65 @@ public class BackupService {
             Sort.by(entitySortField).ascending();
 
         // 페이징 설정
-        Pageable pageable = PageRequest.of(0, size, sort);
+        Pageable pageable = PageRequest.of(0, size + 1, sort);
 
+        long totalElements = backupHistoryRepository.count(
+                BackupSpecifications.withCriteria(worker, status, startedAtFrom, startedAtTo,
+                        null, null, entitySortField, sortDirection));
         // 백업 이력 조회
-        Page<BackupHistory> backupHistories = getFilteredBackups(
-            worker, status, startedAtFrom, startedAtTo, idAfter, pageable);
+        Page<BackupHistory> backupHistoriesPage = backupHistoryRepository.findAll(
+                BackupSpecifications.withCriteria(worker,status, startedAtFrom, startedAtTo, idAfter,
+                        cursorTimeStamp, entitySortField, sortDirection), pageable);
+
+        // 데이터 리스트로 변환
+        List<BackupHistory> backupHistories = new ArrayList<>(backupHistoriesPage.getContent());
+
+        // 다음 페이지 존재 여부 확인
+        boolean hasNext = backupHistories.size() > size;
+        if (hasNext) {
+            backupHistories.remove(size);
+        }
+
+        // 빈 결과 처리
+        if (backupHistories.isEmpty()) {
+            return CursorPageResponse.of(
+                    List.of(),
+                    null,
+                    null,
+                    size,
+                    totalElements,
+                    hasNext
+            );
+        }
+
 
         // DTO 변환
-        List<BackupDto> backupDtos = backupMapper.toDtoList(backupHistories.getContent());
+        List<BackupDto> backupDtos = backupMapper.toDtoList(backupHistories);
 
         // 마지막 ID 추출
-        Long lastId = backupHistories.getContent().isEmpty() ?
-            null : backupHistories.getContent().get(backupHistories.getContent().size() - 1).getId();
+        BackupHistory lastItem = backupHistories.get(backupHistories.size() - 1);
+        Long lastId = lastItem.getId();
+
+        //정렬 필드에 따라 커서 값 설정
+        String nextCursorValue;
+        if("startAt".equals(sortField) || "startAt".equals(sortField)) {
+            nextCursorValue = lastItem.getStartAt().toString();
+        }else if("endedAt".equals(sortField) || "endedAt".equals(sortField)) {
+            nextCursorValue = lastItem.getEndedAt() != null ? lastItem.getEndedAt().toString() : lastItem.getId().toString();
+        }else {
+            nextCursorValue = lastId.toString();
+        }
+
 
         // 커서 페이지 응답 생성
         return CursorPageResponse.of(
-            backupDtos,
-            lastId,
-            size,
-            backupHistories.getTotalElements());
-    }
-
-    /**
-     * 백업 이력 조회 메서드 (페이징 및 필터링 지원)
-     */
-    @Transactional(readOnly = true)
-    public Page<BackupHistory> getFilteredBackups(String worker, BackupStatus status,
-        Instant startedAtFrom, Instant startedAtTo,
-        Long idAfter, Pageable pageable) {
-
-        return backupHistoryRepository.findAll(
-            BackupSpecifications.withCriteria(worker, status, startedAtFrom, startedAtTo, idAfter),
-            pageable);
+                backupDtos,
+                nextCursorValue,
+                lastId,
+                size,
+                totalElements,
+                hasNext
+        );
     }
 
     private String mapSortField(String sortField) {
