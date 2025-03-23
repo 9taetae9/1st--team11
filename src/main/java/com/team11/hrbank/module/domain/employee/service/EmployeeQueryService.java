@@ -57,9 +57,6 @@ public class EmployeeQueryService {
       String sortField,
       String sortDirection
   ) {
-    if (cursor != null && !cursor.isEmpty() && idAfter == null) {
-      idAfter = CursorPageResponse.extractIdFromCursor(cursor);
-    }
 
     List<Employee> employees = employeeRepositoryCustom.findEmployeesByConditions(
         nameOrEmail,
@@ -75,22 +72,42 @@ public class EmployeeQueryService {
         sortField,
         sortDirection);
 
-    Long lastId = null;
-
-    if (employees.size() > size) {
-      // size + 1로 조회했기 때문에, 마지막 직원은 실제 목록에 포함되지 않는다.
-      employees.remove(employees.size() - 1);  // 마지막 직원 제거
+    // 다음 페이지가 있으면 마지막 아이템 제거
+    if (employees.size()> size) {
+      employees.remove(size);
     }
 
-    if (!employees.isEmpty()) {
-      lastId = employees.get(employees.size() - 1).getId();
+    // 데이터가 없으면 빈 응답 반환
+    if (employees.isEmpty()) {
+      return CursorPageResponse.of(List.of(), null, null, size,
+              getEmployeeCount(status, hireDateFrom, hireDateTo));
+    }
+
+    //마지막 직원 정보 가져오기
+    Employee lastEmployee = employees.get(employees.size() - 1);
+    Long lastId = lastEmployee.getId();
+
+    //정렬 필드에 따라 커서 값 설정
+    String nextCursorValue;
+    switch (sortField) {
+      case "name":
+        nextCursorValue = lastEmployee.getName();
+        break;
+      case "employeeNumber":
+        nextCursorValue = lastEmployee.getEmployeeNumber();
+        break;
+      case "hireDate":
+        nextCursorValue = lastEmployee.getHireDate().toString();
+        break;
+      default:
+        nextCursorValue = lastEmployee.getName();
     }
 
     List<EmployeeDto> employeeDtos = employees.stream().map(employeeMapper::toDto).toList();
 
     long totalCount = getEmployeeCount(status, hireDateFrom, hireDateTo);
 
-    return CursorPageResponse.of(employeeDtos, lastId, size, totalCount);
+    return CursorPageResponse.of(employeeDtos, nextCursorValue, lastId, size, totalCount);
   }
 
   // 직원 분포 조회
