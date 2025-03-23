@@ -33,11 +33,13 @@ public record CursorPageResponse<T>(
     // 마지막 페이지인지
 //    boolean hasNext = !content.isEmpty() && cursorValue != null;
 
+    int effectiveSize = hasNext ? size : content.size();
+
     return new CursorPageResponse<>(
             content,
             hasNext ? cursorValue : null,
             hasNext ? lastId : null,
-            size,
+            effectiveSize,  // 수정된 size 값
             totalElements,
             hasNext
     );

@@ -27,7 +27,7 @@ public interface DepartmentService {
       String nameOrDescription,
       Long idAfter,
       String cursor,
-      Integer size,
+      int size,
       String sortField,
       String sortDirection);
 }
