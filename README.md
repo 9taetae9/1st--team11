@@ -67,6 +67,7 @@ HR Bank는 직원 정보 관리, 변경 이력 추적, 부서 관리 및 데이�
 
 ### API 문서화
 ![springdoc-openapi](https://img.shields.io/badge/springdoc--openapi-85EA2D?logo=openapiinitiative&logoColor=black)
+
 **Swagger UI 접속 URL**: 
   - 로컬 환경: `http://localhost:8080/swagger-ui/index.html`
   - 배포 환경: [HR Bank API 문서](https://part1-hrbank-team7-production.up.railway.app/swagger-ui/index.html)
