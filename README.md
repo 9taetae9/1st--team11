@@ -70,7 +70,7 @@ HR Bank는 직원 정보 관리, 변경 이력 추적, 부서 관리 및 데이�
 
 **Swagger UI 접속 URL**: 
   - 로컬 환경: `http://localhost:8080/swagger-ui/index.html`
-  - 배포 환경: [HR Bank API 문서](https://part1-hrbank-team7-production.up.railway.app/swagger-ui/index.html)
+  - 배포 환경: [HR Bank API 문서](https://hr-bank11-production.up.railway.app/swagger-ui/index.html)
 
 ### 배포
 ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white)
