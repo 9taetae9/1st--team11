@@ -4,7 +4,7 @@
 
 | 이름     | 역할                                                                 |
 |----------|----------------------------------------------------------------------|
-| [김태현<br>(팀장)](https://github.com/9taetae9) | - 아키텍처, db schema 설계 및 DDL 관리<br>- GitHub 관리(Branch rules, Issue Templates etc.)<br>- 직원 정보 수정 이력 시스템 구현 및 단위 테스트 작성<br>- 백업 파트 구현, 직원/파일 관리 CUD 기능 개선<br>- 커서 기반 페이지네이션 로직 구현<br>- 개발/운영 환경 profile 구성 및 관리|
+| [김태현<br>(팀장)](https://github.com/9taetae9) | - 아키텍처, db schema 설계 및 DDL 관리<br>- GitHub 관리(Branch rules, Issue Templates etc.)<br>- 직원 정보 수정 이력 시스템 구현 및 단위 테스트 작성<br>- 스케줄러 기반 자동 백업 시스템 구현<br>- 커서 기반 페이지네이션 로직 구현<br>- 개발/운영 환경 profile 구성 및 관리|
 | [김경린](https://github.com/k01zero) | - 직원 도메인 모델 설계 및 비즈니스 로직 구현<br>- 커서 기반 페이지네이션 로직 구현<br>- 프로젝트 진행 일정 및 이슈 문서화(Notion)<br>- 배포 전략 수립 및 시연 |
 | [박지현](https://github.com/jjhparkk) | - ERD 초기 설계<br>- 부서 도메인 모델 구현 및 정렬 기능 개선<br>- 프로젝트 진행 일정 및 이슈 문서화(Notion)<br>- 배포 전략 수립 및 시연|
 | [장건희](https://github.com/Gunh2ee) | - 파일 도메인 모델 구현<br>- Swagger 문서화 |
